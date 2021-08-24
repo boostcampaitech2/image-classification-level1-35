@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -37,7 +38,7 @@ def PathMaker(csv_paths, image_path, load_augmentation):
             # 리스트에 넣어주기
             path_list.append(maked_path)
             label_list.append(label)
-    return path_list, label_list
+    return np.array(path_list), np.array(label_list)
 
 def GetLabel(path):
         # 전체경로에서 마지막 부분 가져 오기 => [사람별 고유 폴더명], mask1.jpg (이부분)
