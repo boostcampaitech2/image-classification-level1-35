@@ -75,10 +75,10 @@ if __name__ == "__main__":
             valid_list, valid_label = img_list[valid_idx], y_list[valid_idx]
             
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-            train_dataset = TrainDataset_v2(train_img, train_y, transform)
+            train_dataset = TrainDataset_v2(train_list, train_label, transform)
             
             # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-            valid_dataset = TrainDataset_v2(valid_img, valid_y, transform)
+            valid_dataset = TrainDataset_v2(valid_list, valid_label, transform)
             
             # DataLoader에 넣어주기
             train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
