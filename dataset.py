@@ -8,7 +8,7 @@ from torchvision import transforms
 # 이미지 전체 경로 생성
 # train.csv의 path 컬럼 이용
 # load_augmentation은 아직 미완성이에요...
-def PathMaker(csv_paths, image_path, load_augmentation):
+def path_maker(csv_paths, image_path, load_augmentation):
     path_list = []  # 모든 이미지 경로들 저장할 리스트
     label_list = [] # 모든 이미지 라벨들 저장할 리스트
     
@@ -40,7 +40,7 @@ def PathMaker(csv_paths, image_path, load_augmentation):
             label_list.append(label)
     return np.array(path_list), np.array(label_list)
 
-def GetLabel(path):
+def get_label(path):
         # 전체경로에서 마지막 부분 가져 오기 => [사람별 고유 폴더명], mask1.jpg (이부분)
         items = path.split('/')[-2:]
         
