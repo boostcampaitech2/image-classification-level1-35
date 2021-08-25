@@ -33,7 +33,7 @@ def path_maker(csv_paths, image_path, load_augmentation):
             maked_path = os.path.join(f_name, img_name)
             
             # GetLabel 함수로 라벨변환
-            label = GetLabel(maked_path)
+            label = get_label(maked_path)
             
             # 리스트에 넣어주기
             path_list.append(maked_path)
