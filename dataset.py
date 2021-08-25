@@ -2,12 +2,41 @@ import os
 import pandas as pd
 import numpy as np
 from PIL import Image
+
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+import matplotlib.pyplot as plt
+
+# Data augmentation을 위한 클래스
+class Preprocessing():
+    def __init__(self, pathes, labels, targets, aug_num):
+        self.pathes = pathes
+        self.y = labels
+        self.targets = targets
+        self.aug_num = aug_num
+
+    # AutoAugmentPolicy = IMAGENET
+    def augmentation(self):
+        policy = transforms.AutoAugmentPolicy.IMAGENET
+        augmenter = transforms.AutoAugment(policy)
+        
+        for idx, path in enumerate(self.pathes):
+            # 정해진 클래스가 아니면 augmentation 실행 X
+            if self.y[idx] not in self.targets:
+                continue
+            img = Image.open(path)
+            for _ in range(self.aug_num):
+                processed_img = augmenter(img)
+                plt.imshow(processed_img)
+                file_name = path.split('/')[-1].split('.')[0]
+                new_path = path.replace(file_name, file_name + "_aug_" + str(_))
+
+                # 이미지 저장
+                processed_img.save(new_path)
+
 # 이미지 전체 경로 생성
 # train.csv의 path 컬럼 이용
-# load_augmentation은 아직 미완성이에요...
 def path_maker(csv_paths, image_path, load_augmentation):
     path_list = []  # 모든 이미지 경로들 저장할 리스트
     label_list = [] # 모든 이미지 라벨들 저장할 리스트
@@ -28,6 +57,8 @@ def path_maker(csv_paths, image_path, load_augmentation):
     for f_name in img_dir_patheses:
         for img_name in os.listdir(f_name):
             if img_name[0] == '.': # .으로 시작하는 바이너리 파일 skip
+                continue
+            if not load_augmentation and 'aug' in img_name:
                 continue
             # 예시: ../input/data/train/images/[사람별 고유 폴더명]와 'mask1.jpg' 결합
             maked_path = os.path.join(f_name, img_name)
@@ -97,7 +128,7 @@ def get_label(path):
                     return 16
                 else:
                     return 17
-
+        
 # Dataset 클래스 정의
 class TrainDataset_v2(Dataset):
     # img_list = 훈련할 이미지 경로들
@@ -121,4 +152,3 @@ class TrainDataset_v2(Dataset):
             image = self.transform(image)
 
         return image, self.y[index]
-        
