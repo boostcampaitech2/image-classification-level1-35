@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # 데이터 불러오기
     print("Data Loading...")
-    img_list, y_list = PathMaker(train_csv_path, train_images_path, load_augmentation)
+    img_list, y_list = path_maker(train_csv_path, train_images_path, load_augmentation)
 
     # Cross validation 안할때
     if k_fold_num == -1:
