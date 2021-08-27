@@ -166,7 +166,9 @@ if __name__ == "__main__":
     train_images_path = "../input/data/train/images/"
     transform_train = Compose([
         RandomCrop(always_apply=True, height=384, width=384, p=1.0),
-        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        HorizontalFlip(p=0.5),
+        RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
