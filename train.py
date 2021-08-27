@@ -5,9 +5,9 @@ import numpy as np
 from PIL import Image
 
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from torchvision.transforms import Resize, ToTensor, Normalize
+from torchvision import transforms as T
 from torch.utils.data import sampler
+from albumentations import *
 
 import torch
 import torch.nn as nn
@@ -18,9 +18,12 @@ from torchsummary import summary
 
 from model import *
 from dataset import *
+from utill import * 
+
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from tqdm import tqdm
+from albumentations.pytorch import ToTensorV2
 
 def Train(train_loader, valid_loader, class_weigth, fold_index):
     # 모델 생성
@@ -38,7 +41,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
     #     dropout_ratio = 0.1,
     #     n_classes = 18).to(device)
     model = Efficientnet(num_classes=18).to(device)
-    
+    #model = SWSLResnext50(num_classes = 18).to(device)
     # Backbone freezing
     # for p in model.pretrained.parameters(): # Resnet part
     #     p.requires_grad = False
@@ -51,11 +54,16 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
 
     # 학습
     loss_func = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(device, dtype=torch.float))
-    optimizer = torch.optim.Adam(model.parameters(), lr = lr)
-    lrscheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer,
-                        lr_lambda=lambda epoch: 0.95 ** epoch,
-                        last_epoch=-1,
-                        verbose=False)
+    optimizer = torch.optim.AdamW(model.parameters(), lr = lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max = 10,
+        eta_min = 0  
+    )
+    # lrscheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer,
+    #                     lr_lambda=lambda epoch: 0.95 ** epoch,
+    #                     last_epoch=-1,
+    #                     verbose=False)
    
     best_metric = 0
     best_model_dict = None
@@ -82,7 +90,6 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
             loss = loss_func(pred, y)
             loss.backward()
             optimizer.step()
-            lrscheduler.step()
 
             batch_loss += loss.cpu().data
             batch_f1 += f1_score(y.cpu().data, torch.argmax(pred.cpu().data, dim=1), average='macro')
@@ -109,11 +116,13 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
         running_acc /= (te_idx+1)
         running_f1 /= (te_idx+1)
 
-        result['train_loss'].append(batch_loss)
+        result['train_loss'].append(batch_loss.cpu().data)
         result['train_f1'].append(batch_f1)
-        result['valid_loss'].append(running_loss)
+        result['valid_loss'].append(running_loss.cpu().data)
         result['valid_acc'].append(running_acc)
         result['valid_f1'].append(running_f1)
+
+        scheduler.step()
 
         if fold_index == -1:
             print(f"epoch: {e} | "
@@ -143,9 +152,9 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
             print("-"*10, "Best model changed", "-"*10)
             print("-"*10, "Model_save", "-"*10)
             if fold_index == -1:
-                torch.save(model, f'../models/{model_name}_best.pt')
+                torch.save(model, f'../models/{model_name}/{model_name}_best.pt')
             else:
-                torch.save(model, f'../models/fold_{fold_index}_{model_name}_best.pt')
+                torch.save(model, f'../models/{model_name}/fold_{fold_index}_{model_name}_best.pt')
             best_metric = running_f1
             best_model_dict = model.state_dict()
             print("-"*10, "Saved!!", "-"*10)
@@ -158,9 +167,9 @@ def Train(train_loader, valid_loader, class_weigth, fold_index):
         
         # Loss, metric 변화 저장
         if fold_index == -1:
-            pd.DataFrame(result).to_csv(f'../results/{model_name}_result.csv', index=False)
+            pd.DataFrame(result).to_csv(f'../results/{model_name}/{model_name}_result.csv', index=False)
         else:
-            pd.DataFrame(result).to_csv(f'../results/fold_{fold_index}_{model_name}_result.csv', index=False)
+            pd.DataFrame(result).to_csv(f'../results/{model_name}/fold_{fold_index}_{model_name}_result.csv', index=False)
     
     return best_model_dict
 
@@ -169,24 +178,39 @@ if __name__ == "__main__":
     # For Augmentation
     augmentation = False
     load_augmentation = True
-    aug_targets = [2,5,6,7,8,9,10,11,12,13,14,15,16,17]
-    aug_num = 5
+    aug_targets = [8, 11, 14, 17]
+    aug_num = 4
 
     # For 학습
-    model_name = 'efficientnet_b3a_autment'
+    model_name = 'efficientnet_b3a_aug_chpolicy_trfm_probup'
     ealry_stopping = 5
     k_fold_num = 5
     epoches = 100
-    lr = 1e-3
+    lr = 1e-4
     batch_size = 32
     train_csv_path = "../input/data/train/train.csv"
     train_images_path = "../input/data/train/images/"
-    transform = transforms.Compose([
+    transform_train = Compose([
         #transforms.CenterCrop(384),
-        Resize((384, 384), Image.BILINEAR),
-        ToTensor(),
-        Normalize(mean=(0.5, 0.5, 0.5), std=(0.2, 0.2, 0.2)),
+        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        HorizontalFlip(p=0.5),
+        RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
+        GaussNoise(var_limit=(1000, 1500), p=0.5), # add
+        MotionBlur(p=0.5), # add
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+        #T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.2, 0.2, 0.2)),
     ])
+    transform_valid = Compose([
+        #transforms.CenterCrop(384),
+        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+        #T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.2, 0.2, 0.2)),
+    ])
+
+    # 결과 및 모델 저장할 폴더
+    create_dir([f'../results/{model_name}', f'../models/{model_name}'])
     
     device = 'cuda' if  torch.cuda.is_available() else 'cpu'
     print("-"*10, "Device info", "-"*10)
@@ -199,6 +223,7 @@ if __name__ == "__main__":
     
     # augmentation == True 이면 
     # 정해신 target class에 대한 이미지만 augmentation
+    # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
     if augmentation:
         print("-"*10,"Start Augmentation", "-"*10)
         print("Target: ", aug_targets)
@@ -227,14 +252,14 @@ if __name__ == "__main__":
                                 shuffle=True, random_state=42, stratify=y_list)
         
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-        train_dataset = TrainDataset_v2(train_img, train_y, transform)
+        train_dataset = TrainDataset_v2(train_img, train_y, transform_train)
         
         # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-        valid_dataset = TrainDataset_v2(valid_img, valid_y, transform)
+        valid_dataset = TrainDataset_v2(valid_img, valid_y, transform_valid)
     
         # DataLoader에 넣어주기
         train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=3, shuffle=True)
-        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=3, shuffle=True)
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=3, shuffle=False)
         print(f'Train_data: {len(train_dataset)}, Valid_data:{len(valid_dataset)}')
         print("Data Loading... Success!!")
         
@@ -258,16 +283,14 @@ if __name__ == "__main__":
             valid_list, valid_label = img_list[valid_idx], y_list[valid_idx]
             
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-            train_dataset = TrainDataset_v2(train_list, train_label, transform)
+            train_dataset = TrainDataset_v2(train_list, train_label, transform_train)
             
             # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-            valid_dataset = TrainDataset_v2(valid_list, valid_label, transform)
+            valid_dataset = TrainDataset_v2(valid_list, valid_label, transform_valid)
             
             # DataLoader에 넣어주기
             train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=3, shuffle=True)
-            valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=3, shuffle=True)
+            valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=3, shuffle=False)
             
             print("Train Start!!")
             best_model = Train(train_loader, valid_loader, class_weigth, fold_index)
-
-        # best_model을 저장? 미구현 Train 안에서 저장 중
