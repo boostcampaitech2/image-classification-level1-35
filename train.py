@@ -163,15 +163,18 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
 
         scheduler.step()
 
-        wandb.log({f"epoch": e})
-        wandb.log({f"train_loss": batch_loss})
-        wandb.log({f"train_cross_loss": batch_corss_loss})
-        wandb.log({f"train_foscal_loss": batch_foscal_loss})
-        wandb.log({f"train_f1": batch_f1})
-        wandb.log({f"valid_loss": running_loss})
-        wandb.log({f"valid_acc": running_acc})
-        wandb.log({f"valid_f1": running_f1})
+        wandb.log({
+            f"epoch": e,
+            f"train_loss": batch_loss,
+            f"train_cross_loss": batch_corss_loss,
+            f"train_foscal_loss": batch_foscal_loss,
+            f"train_f1": batch_f1,
+            f"valid_loss": running_loss,
+            f"valid_acc": running_acc,
+            f"valid_f1": running_f1
+            })
         wandb.log({f"Images": examples})
+
         if fold_index == -1:
             print(f"epoch: {e} | "
                 f"train_loss:{batch_loss:.5f} | "
