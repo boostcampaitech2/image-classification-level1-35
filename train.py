@@ -224,9 +224,9 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
             print("-"*10, "Best model changed", "-"*10)
             print("-"*10, "Model_save", "-"*10)
             if fold_index == -1:
-                torch.save(model, f'../../models/{config.model_name}/{config.model_name}_best.pt')
+                torch.save(model, f'../../models/{config.model_name}/{config.model_name}_{config.config_file_name}_best.pt')
             else:
-                torch.save(model, f'../../models/{config.model_name}/fold_{fold_index}_{config.model_name}_best.pt')
+                torch.save(model, f'../../models/{config.model_name}/fold_{fold_index}_{config.config_file_name}_{config.model_name}_best.pt')
             best_metric = running_f1
             best_model_dict = model.state_dict()
             print("-"*10, "Saved!!", "-"*10)
@@ -272,8 +272,9 @@ if __name__ == "__main__":
         print(FILE_NAME, "-c <config_path> is madatory")
         sys.exit(2)
         
-    config_file_name = CONFIG_PATH.split('/')[1]
+    config_file_name = CONFIG_PATH.split('/')[1].split('.')[0]
     config = read_config(CONFIG_PATH)
+    config.config_file_name = config_file_name
     # 나중에 config로 바꿔줄 인자들
     # For Augmentation
     aug_targets = [8, 11, 14, 17]
@@ -375,8 +376,8 @@ if __name__ == "__main__":
         # kf가 랜덤으로 섞어서 추출해 index들을 반환
         for fold_index, (train_idx, valid_idx) in enumerate(kf.split(img_list, y_list), 1):
             print(f'{fold_index} fold start -')
-            group_name = f'{config.model_name}_{config_file_name}_fold'
-            name = f'{config.model_name}_{fold_index}'
+            group_name = f'{config.model_name}_fold'
+            name = f'{config.model_name}_{config_file_name}_{fold_index}'
             # if config.loss == 'Crossentropy_foscal':
             #     group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold' 
             #     group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold'
