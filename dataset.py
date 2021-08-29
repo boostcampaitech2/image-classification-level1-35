@@ -81,53 +81,60 @@ def get_label(path):
         # mask1 부분 가져오기
         mask_status = items[1].split('.')[0]
 
+        if int(age) < 30:
+            return 0
+        elif int(age) < 60:
+            return 1
+        else:
+            return 2
+
         # class 조건에 따라 분류
         # mask먼저 분류하면 incorrect_mask도 포함이 되서 incorrect 먼저 분류
-        if 'incorrect' in mask_status:
-            if sex == 'male':
-                if int(age) < 30:
-                    return 6
-                elif int(age) < 60:
-                    return 7
-                else:
-                    return 8
-            else:
-                if int(age) < 30:
-                    return 9
-                elif int(age) < 60:
-                    return 10
-                else:
-                    return 11
-        elif 'mask' in mask_status:
-            if sex == 'male':
-                if int(age) < 30:
-                    return 0
-                elif int(age) < 60:
-                    return 1
-                else:
-                    return 2
-            else:
-                if int(age) < 30:
-                    return 3
-                elif int(age) < 60:
-                    return 4
-                else:
-                    return 5
-        else:
-            if sex == 'male':
-                if int(age) < 30:
-                    return 12
-                elif int(age) < 60:
-                    return 13
-                else:
-                    return 14
-            else:
-                if int(age) < 30:
-                    return 15
-                elif int(age) < 60:
-                    return 16
-                else:
-                    return 17
+        # if 'incorrect' in mask_status:
+        #     if sex == 'male':
+        #         if int(age) < 30:
+        #             return 6
+        #         elif int(age) < 60:
+        #             return 7
+        #         else:
+        #             return 8
+        #     else:
+        #         if int(age) < 30:
+        #             return 9
+        #         elif int(age) < 60:
+        #             return 10
+        #         else:
+        #             return 11
+        # elif 'mask' in mask_status:
+        #     if sex == 'male':
+        #         if int(age) < 30:
+        #             return 0
+        #         elif int(age) < 60:
+        #             return 1
+        #         else:
+        #             return 2
+        #     else:
+        #         if int(age) < 30:
+        #             return 3
+        #         elif int(age) < 60:
+        #             return 4
+        #         else:
+        #             return 5
+        # else:
+        #     if sex == 'male':
+        #         if int(age) < 30:
+        #             return 12
+        #         elif int(age) < 60:
+        #             return 13
+        #         else:
+        #             return 14
+        #     else:
+        #         if int(age) < 30:
+        #             return 15
+        #         elif int(age) < 60:
+        #             return 16
+        #         else:
+        #             return 17
         
 # Dataset 클래스 정의
 class TrainDataset_v2(Dataset):

@@ -18,13 +18,6 @@ class MyModel(nn.Module):
     def __init__(self, num_classes: int = 1000):
         super(MyModel, self).__init__()
         self.pretrained = cvmodels.resnet50(pretrained=True)
-        #pretrained = cvmodels.resnet50(pretrained=True)
-        # self.features = nn.Sequential(
-        #     nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU(inplace=True),
-        # )
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.pretrained.fc = nn.Sequential(
             nn.Dropout(),
             nn.Linear(2048, 1000),
@@ -41,11 +34,6 @@ class MyModel(nn.Module):
         x = self.classifier(x)
         return x
 
-
-#model = MyModel(num_classes=18)
-#print(model)
-#summary(model, input_size=(3, 512, 384), device='cpu')
-# swsl_resnext50_32x4d
 class Efficientnet(nn.Module):
     def __init__(self, num_classes: int = 1000):
         super().__init__()
@@ -63,10 +51,6 @@ class Efficientnet(nn.Module):
         x = self.pretrained(x)
         return x
 
-#model = Efficientnet(num_classes=18)
-#print(model)
-#summary(model, input_size=(3, 256, 256), device='cpu')
-
 class SWSLResnext50(nn.Module):
     def __init__(self, num_classes: int = 1000):
         super().__init__()
@@ -74,7 +58,7 @@ class SWSLResnext50(nn.Module):
         self.pretrained.fc = nn.Sequential(
             nn.Linear(2048, 512, bias=True),
             nn.LeakyReLU(0.3),
-            nn.Linear(512, 18, bias=True),
+            nn.Linear(512, num_classes, bias=True),
             # nn.LeakyReLU(0.3),
             # nn.Linear(256, 18, bias=True),
         )
@@ -84,6 +68,27 @@ class SWSLResnext50(nn.Module):
         x = self.pretrained(x)
         return x
 
-# model = SWSLResnext50(num_classes=18)
-# print(model)
-#summary(model, input_size=(3, 256, 256), device='cpu')
+class MobilenetV3(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('mobilenetv2_100', pretrained=True)
+        self.pretrained.classifier = nn.Sequential(
+            nn.Linear(1028, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+def get_model(config, num_classes):
+    if config.model_name == 'efficientnet_b3a':
+        model = Efficientnet(num_classes=num_classes).to(config.device)
+        return model
+    elif config.model_name == 'swsl_resnext50_32x4d':
+        model = SWSLResnext50(num_classes=num_classes).to(config.device)
+        return model
+    elif config.model_name == 'mobilenetv2_100':
+        model = MobilenetV3(num_classes=num_classes).to(config.device)
+        return model

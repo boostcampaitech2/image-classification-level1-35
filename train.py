@@ -58,7 +58,15 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
     #summary(model, input_size=(3, 512, 384), device=device)
 
     # 학습
-    
+    if config.loss == 'CrossEntropy':
+        loss_func1 = torch.nn.CrossEntropyLoss()
+    elif config.loss == 'Crossentropy_foscal':
+        loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
+        loss_func2 = FocalLoss()
+    elif config.loss == 'CrossEntropy_weighted':
+        loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
+    elif config.loss == 'Foscal':
+        loss_func1 = FocalLoss()
     
     if config.optimizer == 'AdamW':
         optimizer = torch.optim.AdamW(model.parameters(), lr = config.lr)
@@ -263,6 +271,7 @@ if __name__ == "__main__":
         print(FILE_NAME, "-c <config_path> is madatory")
         sys.exit(2)
         
+    config_file_name = CONFIG_PATH.split('/')[1]
     config = read_config(CONFIG_PATH)
     # 나중에 config로 바꿔줄 인자들
     # For Augmentation
@@ -362,12 +371,15 @@ if __name__ == "__main__":
         # kf가 랜덤으로 섞어서 추출해 index들을 반환
         for fold_index, (train_idx, valid_idx) in enumerate(kf.split(img_list, y_list), 1):
             print(f'{fold_index} fold start -')
-            if config.loss == 'Crossentropy_foscal':
-                group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold'
-                name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_{fold_index}'
-            else:
-                group_name = f'{config.loss}_fold'
-                name = f'{config.loss}_{fold_index}'
+            group_name = f'{config.model_name}_{config_file_name}_fold'
+            name = f'{config.model_name}_{fold_index}'
+            # if config.loss == 'Crossentropy_foscal':
+            #     group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold' 
+            #     group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold'
+            #     name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_{fold_index}'
+            # else:
+            #     group_name = f'{config.loss}_fold'
+            #     name = f'{config.loss}_{fold_index}'
             run = wandb.init(project='image_classification', entity='kyunghyun', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             # index로 array 나누기
             train_list, train_label = img_list[train_idx], y_list[train_idx]
