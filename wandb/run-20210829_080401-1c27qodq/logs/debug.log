@@ -1,0 +1,50 @@
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_setup.py:_flush():69] setting env: {}
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_setup.py:_flush():69] setting login settings: {}
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_init.py:_log_setup():342] Logging user logs to /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/logs/debug.log
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_init.py:_log_setup():343] Logging internal logs to /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/logs/debug-internal.log
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_init.py:init():375] calling init triggers
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_init.py:init():380] wandb.init called with sweep_config: {}
+config: {'__wrapped__': <class 'wandb.sdk.wandb_config.Config'>, 'augmentation': False, 'load_augmentation': False, 'aug_num': 4, 'optimizer': 'AdamW', 'scheduler': 'CosineAnnealingLR', 'loss': 'Crossentropy_foscal', 'loss1_weight': 0.1, 'loss2_weight': 0.9, 'model_name': 'efficientnet_b3a', 'early_stopping': 3, 'k_fold_num': -1, 'epoches': 100, 'lr': 0.001, 'batch_size': 32, 'train_csv_path': '../../input/data/train/train.csv', 'train_images_path': '../../input/data/train/images/', 'device': 'cuda'}
+2021-08-29 08:04:01,164 INFO    MainThread:19394 [wandb_init.py:init():424] starting backend
+2021-08-29 08:04:01,165 INFO    MainThread:19394 [backend.py:_multiprocessing_setup():70] multiprocessing start_methods=fork,spawn,forkserver, using: fork
+2021-08-29 08:04:01,167 INFO    MainThread:19394 [backend.py:ensure_launched():135] starting backend process...
+2021-08-29 08:04:01,174 INFO    MainThread:19394 [backend.py:ensure_launched():139] started backend process with pid: 19424
+2021-08-29 08:04:01,175 INFO    MainThread:19394 [wandb_init.py:init():429] backend started and connected
+2021-08-29 08:04:01,177 INFO    MainThread:19394 [wandb_init.py:init():477] updated telemetry
+2021-08-29 08:04:01,180 INFO    MainThread:19424 [internal.py:wandb_internal():86] W&B internal server running at pid: 19424, started at: 2021-08-29 08:04:01.179175
+2021-08-29 08:04:01,181 INFO    MainThread:19394 [wandb_init.py:init():500] communicating current version
+2021-08-29 08:04:01,186 INFO    WriterThread:19424 [datastore.py:open_for_write():77] open: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/run-1c27qodq.wandb
+2021-08-29 08:04:01,362 INFO    MainThread:19394 [wandb_init.py:init():505] got version response 
+2021-08-29 08:04:01,362 INFO    MainThread:19394 [wandb_init.py:init():513] communicating run to backend with 30 second timeout
+2021-08-29 08:04:01,632 INFO    MainThread:19394 [wandb_init.py:init():540] starting run threads in backend
+2021-08-29 08:04:01,632 INFO    SenderThread:19424 [dir_watcher.py:__init__():169] watching files in: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files
+2021-08-29 08:04:01,633 INFO    SenderThread:19424 [sender.py:_start_run_threads():740] run started: 1c27qodq with start time 1630224241
+2021-08-29 08:04:01,635 INFO    SenderThread:19424 [sender.py:_save_file():873] saving file wandb-summary.json with policy end
+2021-08-29 08:04:02,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/wandb-summary.json
+2021-08-29 08:04:02,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/requirements.txt
+2021-08-29 08:04:02,636 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/conda-environment.yaml
+2021-08-29 08:04:06,404 INFO    SenderThread:19424 [sender.py:_save_file():873] saving file wandb-metadata.json with policy now
+2021-08-29 08:04:06,407 INFO    MainThread:19394 [wandb_run.py:_console_start():1601] atexit reg
+2021-08-29 08:04:06,408 INFO    MainThread:19394 [wandb_run.py:_redirect():1475] redirect: SettingsConsole.REDIRECT
+2021-08-29 08:04:06,408 INFO    MainThread:19394 [wandb_run.py:_redirect():1480] Redirecting console.
+2021-08-29 08:04:06,411 INFO    MainThread:19394 [wandb_run.py:_redirect():1536] Redirects installed.
+2021-08-29 08:04:06,411 INFO    MainThread:19394 [wandb_init.py:init():565] run started, returning control to user process
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/conda-environment.yaml
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/wandb-metadata.json
+2021-08-29 08:04:07,033 INFO    Thread-12 :19424 [upload_job.py:push():137] Uploaded file /tmp/tmpxiweglerwandb/3dp94z6d-wandb-metadata.json
+2021-08-29 08:04:10,929 INFO    MainThread:19394 [wandb_watch.py:watch():43] Watching
+2021-08-29 08:04:12,637 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:14,638 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:16,638 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:18,639 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:20,640 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:22,641 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:24,642 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:26,642 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:28,643 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:30,644 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:32,645 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:34,646 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:36,647 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:38,647 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log

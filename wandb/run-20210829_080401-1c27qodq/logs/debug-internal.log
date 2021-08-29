@@ -1,0 +1,51 @@
+2021-08-29 08:04:01,180 INFO    MainThread:19424 [internal.py:wandb_internal():86] W&B internal server running at pid: 19424, started at: 2021-08-29 08:04:01.179175
+2021-08-29 08:04:01,186 DEBUG   SenderThread:19424 [sender.py:send():182] send: header
+2021-08-29 08:04:01,187 DEBUG   HandlerThread:19424 [handler.py:handle_request():126] handle_request: check_version
+2021-08-29 08:04:01,186 INFO    WriterThread:19424 [datastore.py:open_for_write():77] open: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/run-1c27qodq.wandb
+2021-08-29 08:04:01,187 DEBUG   SenderThread:19424 [sender.py:send_request():196] send_request: check_version
+2021-08-29 08:04:01,364 DEBUG   SenderThread:19424 [sender.py:send():182] send: run
+2021-08-29 08:04:01,632 INFO    SenderThread:19424 [dir_watcher.py:__init__():169] watching files in: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files
+2021-08-29 08:04:01,633 INFO    SenderThread:19424 [sender.py:_start_run_threads():740] run started: 1c27qodq with start time 1630224241
+2021-08-29 08:04:01,633 DEBUG   SenderThread:19424 [sender.py:send():182] send: summary
+2021-08-29 08:04:01,633 DEBUG   HandlerThread:19424 [handler.py:handle_request():126] handle_request: run_start
+2021-08-29 08:04:01,635 INFO    SenderThread:19424 [sender.py:_save_file():873] saving file wandb-summary.json with policy end
+2021-08-29 08:04:01,639 DEBUG   HandlerThread:19424 [meta.py:__init__():40] meta init
+2021-08-29 08:04:01,639 DEBUG   HandlerThread:19424 [meta.py:__init__():54] meta init done
+2021-08-29 08:04:01,639 DEBUG   HandlerThread:19424 [meta.py:probe():211] probe
+2021-08-29 08:04:01,646 DEBUG   HandlerThread:19424 [meta.py:_setup_git():201] setup git
+2021-08-29 08:04:01,676 DEBUG   HandlerThread:19424 [meta.py:_setup_git():208] setup git done
+2021-08-29 08:04:01,676 DEBUG   HandlerThread:19424 [meta.py:_save_pip():58] save pip
+2021-08-29 08:04:01,677 DEBUG   HandlerThread:19424 [meta.py:_save_pip():72] save pip done
+2021-08-29 08:04:01,677 DEBUG   HandlerThread:19424 [meta.py:_save_conda():79] save conda
+2021-08-29 08:04:02,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/wandb-summary.json
+2021-08-29 08:04:02,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/requirements.txt
+2021-08-29 08:04:02,636 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/conda-environment.yaml
+2021-08-29 08:04:06,150 DEBUG   HandlerThread:19424 [meta.py:_save_conda():87] save conda done
+2021-08-29 08:04:06,150 DEBUG   HandlerThread:19424 [meta.py:probe():249] probe done
+2021-08-29 08:04:06,404 DEBUG   SenderThread:19424 [sender.py:send():182] send: files
+2021-08-29 08:04:06,404 INFO    SenderThread:19424 [sender.py:_save_file():873] saving file wandb-metadata.json with policy now
+2021-08-29 08:04:06,408 DEBUG   HandlerThread:19424 [handler.py:handle_request():126] handle_request: stop_status
+2021-08-29 08:04:06,408 DEBUG   SenderThread:19424 [sender.py:send_request():196] send_request: stop_status
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/conda-environment.yaml
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:06,635 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_created():217] file/dir created: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/wandb-metadata.json
+2021-08-29 08:04:07,033 INFO    Thread-12 :19424 [upload_job.py:push():137] Uploaded file /tmp/tmpxiweglerwandb/3dp94z6d-wandb-metadata.json
+2021-08-29 08:04:12,637 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:14,638 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:16,638 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:18,639 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:20,640 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:21,591 DEBUG   HandlerThread:19424 [handler.py:handle_request():126] handle_request: stop_status
+2021-08-29 08:04:21,591 DEBUG   SenderThread:19424 [sender.py:send_request():196] send_request: stop_status
+2021-08-29 08:04:22,641 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:24,642 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:26,642 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:28,643 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:29,890 DEBUG   SenderThread:19424 [sender.py:send():182] send: stats
+2021-08-29 08:04:30,644 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:32,645 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:34,646 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:36,647 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log
+2021-08-29 08:04:36,784 DEBUG   HandlerThread:19424 [handler.py:handle_request():126] handle_request: stop_status
+2021-08-29 08:04:36,784 DEBUG   SenderThread:19424 [sender.py:send_request():196] send_request: stop_status
+2021-08-29 08:04:38,647 INFO    Thread-9  :19424 [dir_watcher.py:_on_file_modified():230] file/dir modified: /opt/ml/git/image-classification-level1-35/wandb/run-20210829_080401-1c27qodq/files/output.log

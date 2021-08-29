@@ -1,0 +1,27 @@
+{
+    "os": "Linux-4.4.0-59-generic-x86_64-with-glibc2.10",
+    "python": "3.8.5",
+    "heartbeatAt": "2021-08-29T08:01:05.025277",
+    "startedAt": "2021-08-29T08:01:04.570978",
+    "docker": null,
+    "gpu": "Tesla V100-PCIE-32GB",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [
+        "-c",
+        "configs/effnet1.ini"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/boostcampaitech2/image-classification-level1-35.git",
+        "commit": "71db4c27e57967a7a424f5384191581ef5353297"
+    },
+    "email": "lkh1075@yonsei.ac.kr",
+    "root": "/opt/ml/git/image-classification-level1-35",
+    "host": "81b84c4e2377",
+    "username": "root",
+    "executable": "/opt/conda/bin/python"
+}

@@ -80,7 +80,8 @@ def get_label(path):
         
         # mask1 부분 가져오기
         mask_status = items[1].split('.')[0]
-
+        
+        # age 단일 라벨로 수정
         if int(age) < 30:
             return 0
         elif int(age) < 60:
