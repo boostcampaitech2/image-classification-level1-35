@@ -29,7 +29,7 @@ from albumentations.pytorch import ToTensorV2
 
 import wandb
 
-def Train(train_loader, valid_loader, class_weigth, fold_index, config):
+def train(train_loader, valid_loader, class_weigth, fold_index, config):
     # 모델 생성
     print("Model Generation...")
     #model = MyModel(num_classes=18).to(device)
@@ -58,15 +58,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
     #summary(model, input_size=(3, 512, 384), device=device)
 
     # 학습
-    if config.loss == 'CrossEntropy':
-        loss_func1 = torch.nn.CrossEntropyLoss()
-    elif config.loss == 'Crossentropy_foscal':
-        loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
-        loss_func2 = FocalLoss()
-    elif config.loss == 'CrossEntropy_weighted':
-        loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
-    elif config.loss == 'Foscal':
-        loss_func1 = FocalLoss()
+    
     
     if config.optimizer == 'AdamW':
         optimizer = torch.optim.AdamW(model.parameters(), lr = config.lr)
@@ -86,7 +78,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
    
     best_metric = 0
     best_model_dict = None
-    ealry_stopping_count = 0
+    early_stopping_count = 0
     result = {
         'train_loss':[],
         'train_f1':[],
@@ -129,7 +121,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
             batch_loss += loss.cpu().data
             batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
             batch_f1_target.extend(y.cpu().data)
-        break
+        
         # validation
         model.eval()
         running_acc = 0
@@ -218,7 +210,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
         #     print("-"*10, "Check_point Saved!!", "-"*10)
 
         # f1 score 기준으로 best 모델 채택
-        # ealry_stopping_count 활용
+        # early_stopping_count 활용
         if running_f1 > best_metric:
             print("-"*10, "Best model changed", "-"*10)
             print("-"*10, "Model_save", "-"*10)
@@ -230,7 +222,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
             best_model_dict = model.state_dict()
             print("-"*10, "Saved!!", "-"*10)
         else:
-            ealry_stopping_count += 1
+            early_stopping_count += 1
 
         # Loss, metric 변화 저장
         if fold_index == -1:
@@ -238,8 +230,8 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
         else:
             pd.DataFrame(result).to_csv(f'../results/{config.model_name}/fold_{fold_index}_{config.model_name}_result.csv', index=False)
 
-        if ealry_stopping_count == config.ealry_stopping:
-            print("-"*10, "Ealry Stop!!!!", "-"*10)
+        if early_stopping_count == config.early_stopping:
+            print("-"*10, "Early Stop!!!!", "-"*10)
             break
         
     return best_model_dict
