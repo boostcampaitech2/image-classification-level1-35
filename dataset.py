@@ -3,9 +3,10 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 
+import torch
 from torch.utils.data import Dataset
-from torchvision import transforms
-
+from torchvision import transforms as T
+from albumentations import *
 import matplotlib.pyplot as plt
 
 # Data augmentation을 위한 클래스
@@ -18,8 +19,8 @@ class Preprocessing():
 
     # AutoAugmentPolicy = IMAGENET
     def augmentation(self):
-        policy = transforms.AutoAugmentPolicy.IMAGENET
-        augmenter = transforms.AutoAugment(policy)
+        policy = T.AutoAugmentPolicy.IMAGENET
+        augmenter = T.AutoAugment(policy)
         
         for idx, path in enumerate(self.pathes):
             # 정해진 클래스가 아니면 augmentation 실행 X
@@ -28,7 +29,6 @@ class Preprocessing():
             img = Image.open(path)
             for _ in range(self.aug_num):
                 processed_img = augmenter(img)
-                plt.imshow(processed_img)
                 file_name = path.split('/')[-1].split('.')[0]
                 new_path = path.replace(file_name, file_name + "_aug_" + str(_))
 
@@ -44,7 +44,7 @@ def path_maker(csv_paths, image_path, load_augmentation):
     # train.csv 파일 읽어오기
     img_dir = pd.read_csv(csv_paths)#"../input/data/train/train.csv")
     
-    # paht 컬럼만 추출
+    # path 컬럼만 추출
     img_dir_pathes = img_dir['path']
     
     # image_path = ../input/data/train/images" + img_dir['path']의 이미지 폴더 이름을 합치기
@@ -145,10 +145,25 @@ class TrainDataset_v2(Dataset):
     
     # 데이터 반환
     def __getitem__(self, index):
-        image = Image.open(self.X[index])
+        img = np.array(Image.open(self.X[index]))
         
         # 이미지는 전처리 적용해서 반환
         if self.transform:
-            image = self.transform(image)
+            img = (self.transform(image=img))['image']
 
-        return image, self.y[index]
+        return img.float(), self.y[index]
+
+class TestDataset(Dataset):
+    def __init__(self, img_paths, transform):
+        self.img_paths = img_paths
+        self.transform = transform
+
+    def __getitem__(self, index):
+        image = Image.open(self.img_paths[index])
+
+        if self.transform:
+            image = self.transform(image=np.array(image))['image']
+        return image.float()
+
+    def __len__(self):
+        return len(self.img_paths)

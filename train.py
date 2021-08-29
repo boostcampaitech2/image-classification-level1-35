@@ -70,6 +70,9 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
     
     if config.optimizer == 'AdamW':
         optimizer = torch.optim.AdamW(model.parameters(), lr = config.lr)
+    elif config.optimizer == 'Adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr = config.lr)
+
     if config.scheduler == 'CosineAnnealingLR':
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
@@ -86,8 +89,6 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
     ealry_stopping_count = 0
     result = {
         'train_loss':[],
-        'train_cross_loss':[],
-        'train_foscal_loss':[],
         'train_f1':[],
         'valid_loss':[],
         'valid_acc':[],
@@ -98,6 +99,8 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
         batch_corss_loss = 0
         batch_foscal_loss = 0
         batch_loss = 0
+        batch_f1_pred = []
+        batch_f1_target = []
         batch_f1 = 0
         # train
         for tr_idx, (X, y) in enumerate(tqdm(train_loader)):
@@ -106,28 +109,33 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
             optimizer.zero_grad()
 
             pred = model.forward(x)
-            cross_loss = loss_func1(pred, y)
-            foscal_loss = loss_func2(pred, y)
+            # cross_loss = loss_func1(pred, y)
+            # foscal_loss = loss_func2(pred, y)
             if config.loss == 'CrossEntropy' or config.loss == 'CrossEntropy_weighted' or config.loss == 'Foscal':
                 cross_loss = loss_func1(pred, y)
                 loss = cross_loss
+                
+                batch_corss_loss += cross_loss.cpu().data
             elif config.loss == 'Crossentropy_foscal':
                 cross_loss = loss_func1(pred, y)
                 foscal_loss = loss_func2(pred, y)
+
+                batch_corss_loss += cross_loss.cpu().data
+                batch_foscal_loss += foscal_loss.cpu().data
                 loss = cross_loss * config.loss1_weight + foscal_loss * config.loss2_weight
             loss.backward()
             optimizer.step()
-
-            batch_corss_loss += cross_loss.cpu().data
-            batch_foscal_loss += foscal_loss.cpu().data
+  
             batch_loss += loss.cpu().data
-            batch_f1 += f1_score(y.cpu().data, torch.argmax(pred.cpu().data, dim=1), average='macro')
-        
+            batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
+            batch_f1_target.extend(y.cpu().data)
+        break
         # validation
         model.eval()
         running_acc = 0
         running_loss = 0
-        running_f1 = 0
+        running_f1_pred = []
+        running_f1_target = []
         examples = []
         for te_idx, (X, y) in enumerate(tqdm(valid_loader)):
             X = X.to(config.device)
@@ -135,27 +143,35 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
 
             with torch.set_grad_enabled(False):
                 pred = model(X)
-                loss1 = loss_func1(pred, y)
-                loss2 = loss_func2(pred, y)
-                loss = loss1 + loss2
+                if config.loss == 'CrossEntropy' or config.loss == 'CrossEntropy_weighted' or config.loss == 'Foscal':
+                    loss = loss_func1(pred, y)
+                else:
+                    loss1 = loss_func1(pred, y)
+                    loss2 = loss_func2(pred, y)
+                    loss = loss1 * config.loss1_weight + loss2 * config.loss2_weight
                 running_acc += accuracy_score(torch.argmax(pred.cpu().data, dim=1), y.cpu().data)
-                running_f1 += f1_score(y.cpu().data, torch.argmax(pred.cpu().data, dim=1), average='macro')
+                running_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
+                running_f1_target.extend(y.cpu().data)
                 running_loss += loss.cpu().data
-                random_idx = random.randrange(0, config.batch_size)
+                #random_idx = random.randrange(0, config.batch_size)
                 if te_idx % 10 == 0:
-                    examples.append(wandb.Image(X[random_idx], caption=f'Pred: {torch.argmax(pred.cpu().data, dim=1)[random_idx]}, Real: {y.cpu().data[random_idx]}'))
-
-        batch_corss_loss /= (tr_idx+1)
-        batch_foscal_loss /= (tr_idx+1)
+                    pred_label = torch.argmax(pred.cpu().data, dim=1)
+                    real_label = y.cpu().data
+                    for img_idx in range(config.batch_size):
+                        if pred_label[img_idx] != real_label[img_idx]:
+                            examples.append(wandb.Image(X[img_idx], caption=f'Pred: {torch.argmax(pred.cpu().data, dim=1)[img_idx]}, Real: {y.cpu().data[img_idx]}'))
+            
+        #batch_corss_loss /= (tr_idx+1)
+        #batch_foscal_loss /= (tr_idx+1)
         batch_loss /= (tr_idx+1)
-        batch_f1 /= (tr_idx+1)
+        batch_f1 = f1_score(batch_f1_target, batch_f1_pred, average='macro')
         running_loss /= (te_idx+1)
         running_acc /= (te_idx+1)
-        running_f1 /= (te_idx+1)
+        running_f1 = f1_score(running_f1_target, running_f1_pred, average='macro')
 
         result['train_loss'].append(batch_loss.cpu().data)
-        result['train_cross_loss'].append(batch_corss_loss.cpu().data)
-        result['train_foscal_loss'].append(batch_foscal_loss.cpu().data)
+        #result['train_cross_loss'].append(batch_corss_loss.cpu().data)
+        #result['train_foscal_loss'].append(batch_foscal_loss.cpu().data)
         result['train_f1'].append(batch_f1)
         result['valid_loss'].append(running_loss.cpu().data)
         result['valid_acc'].append(running_acc)
@@ -166,25 +182,26 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
         wandb.log({
             f"epoch": e,
             f"train_loss": batch_loss,
-            f"train_cross_loss": batch_corss_loss,
-            f"train_foscal_loss": batch_foscal_loss,
+           # f"train_cross_loss": batch_corss_loss,
+           # f"train_foscal_loss": batch_foscal_loss,
             f"train_f1": batch_f1,
             f"valid_loss": running_loss,
             f"valid_acc": running_acc,
             f"valid_f1": running_f1
             })
-        wandb.log({f"Images": examples})
+        
 
         if fold_index == -1:
             print(f"epoch: {e} | "
                 f"train_loss:{batch_loss:.5f} | "
-                f"train_cross_loss:{batch_corss_loss:.5f} | "
-                f"train_foscal_loss:{batch_foscal_loss:.5f} | "
+            #    f"train_cross_loss:{batch_corss_loss:.5f} | "
+            #    f"train_foscal_loss:{batch_foscal_loss:.5f} | "
                 f"train_f1:{batch_f1:.5f} |"
                 f"valid_loss:{running_loss:.5f} | "
                 f"valid_acc:{running_acc:.5f} | "
                 f"valid_f1:{running_f1:.5f}"
                 )
+            wandb.log({f"epoch": e, f"Images": examples})
         else:
             print(f"fold: {fold_index} | "
                 f"epoch: {e} | "
@@ -194,6 +211,7 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
                 f"valid_acc:{running_acc:.5f} | "
                 f"valid_f1:{running_f1:.5f}"
                 )
+            wandb.log({f"epoch": e, f"Images_{fold_index}": examples})
         # if e % 3 == 0:
         #     print("-"*10, "Check_point", "-"*10)
         #     torch.save(model, f'../models/{model_name}_{e}_{batch_f1:.2f}.pt')
@@ -213,17 +231,17 @@ def Train(train_loader, valid_loader, class_weigth, fold_index, config):
             print("-"*10, "Saved!!", "-"*10)
         else:
             ealry_stopping_count += 1
-        
-        if ealry_stopping_count == config.ealry_stopping:
-            print("-"*10, "Ealry Stop!!!!", "-"*10)
-            break
-        
+
         # Loss, metric 변화 저장
         if fold_index == -1:
             pd.DataFrame(result).to_csv(f'../results/{config.model_name}/{config.model_name}_result.csv', index=False)
         else:
             pd.DataFrame(result).to_csv(f'../results/{config.model_name}/fold_{fold_index}_{config.model_name}_result.csv', index=False)
-    
+
+        if ealry_stopping_count == config.ealry_stopping:
+            print("-"*10, "Ealry Stop!!!!", "-"*10)
+            break
+        
     return best_model_dict
 
 if __name__ == "__main__":
@@ -312,6 +330,13 @@ if __name__ == "__main__":
 
     # Cross validation 안할때
     if config.k_fold_num == -1:
+        if config.loss == 'Crossentropy_foscal':
+                group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}'
+                name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}'
+        else:
+            group_name = f'{config.loss}'
+            name = f'{config.loss}'
+        wandb.init(project='image_classification', entity='kyunghyun', name=name, group=group_name, config=config, settings=wandb.Settings(start_method="fork"))
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
@@ -331,7 +356,7 @@ if __name__ == "__main__":
         print("Data Loading... Success!!")
         
         print("Train Start!!")
-        best_model = Train(train_loader, valid_loader, class_weigth, -1, config)
+        best_model = train(train_loader, valid_loader, class_weigth, -1, config)
 
         # best_model을 저장? 미구현 Train 안에서 저장 중
 
@@ -346,12 +371,12 @@ if __name__ == "__main__":
         for fold_index, (train_idx, valid_idx) in enumerate(kf.split(img_list, y_list), 1):
             print(f'{fold_index} fold start -')
             if config.loss == 'Crossentropy_foscal':
-                group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}'
+                group_name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_fold'
                 name = f'{config.loss}_{config.loss1_weight}_{config.loss2_weight}_{fold_index}'
             else:
-                group_name = f'{config.loss}'
+                group_name = f'{config.loss}_fold'
                 name = f'{config.loss}_{fold_index}'
-            wandb.init(project='image_classification', entity='kyunghyun', group=group_name, name=name)
+            run = wandb.init(project='image_classification', entity='kyunghyun', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             # index로 array 나누기
             train_list, train_label = img_list[train_idx], y_list[train_idx]
             valid_list, valid_label = img_list[valid_idx], y_list[valid_idx]
@@ -367,6 +392,7 @@ if __name__ == "__main__":
             valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
             
             print("Train Start!!")
-            best_model = Train(train_loader, valid_loader, class_weigth, fold_index, config)
+            best_model = train(train_loader, valid_loader, class_weigth, fold_index, config)
+            run.finish()
 
         # best_model을 저장? 미구현 Train 안에서 저장 중
