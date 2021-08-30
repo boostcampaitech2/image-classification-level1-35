@@ -1,7 +1,10 @@
 import os
 import wandb
 import configparser
+import wandb
+import numpy as np
 
+# 결과 dict 및 모델 저장할 폴더 생성
 def create_dir(pathes):
     for path in pathes:
         try:
@@ -10,6 +13,7 @@ def create_dir(pathes):
         except OSError:
            print('Error create_dir.' + path)
 
+# Config 파일 parsing
 def read_config(paths):
     config = wandb.config
 
@@ -38,6 +42,61 @@ def read_config(paths):
     config.prediction_type =  values['training']['prediction_type']
     return config
 
+# dict에 학습 결과 기록
+def logging_with_dict(result, e, batch_loss, batch_f1, running_loss, running_acc, running_f1):
+    result['epoch'].append(e)
+    result['train_loss'].append(batch_loss.cpu().data)
+    result['train_f1'].append(batch_f1)
+    result['valid_loss'].append(running_loss.cpu().data)
+    result['valid_acc'].append(running_acc)
+    result['valid_f1'].append(running_f1)
+
+    return result
+
+# wandb에 학습 결과 기록
+def logging_with_wandb(e, batch_loss, batch_f1, running_loss, running_acc, running_f1, examples, fold_index):
+    wandb.log({
+                f"epoch": e,
+                f"train_loss": batch_loss,
+                f"train_f1": batch_f1,
+                f"valid_loss": running_loss,
+                f"valid_acc": running_acc,
+                f"valid_f1": running_f1
+                })
+    if fold_index == -1:
+        wandb.log({f"epoch": e, f"Images": examples})
+    else:
+        wandb.log({f"epoch": e, f"Images_{fold_index}": examples})
+
+# console에 출력
+def logging_with_sysprint(e, batch_loss, batch_f1, running_loss, running_acc, running_f1, fold_index):
+    if fold_index == -1:
+        print(f"epoch: {e} | "
+            f"train_loss:{batch_loss:.5f} | "
+            f"train_f1:{batch_f1:.5f} |"
+            f"valid_loss:{running_loss:.5f} | "
+            f"valid_acc:{running_acc:.5f} | "
+            f"valid_f1:{running_f1:.5f}"
+            )
+    else:
+        print(f"fold: {fold_index} | "
+            f"epoch: {e} | "
+            f"train_loss:{batch_loss:.5f} | "
+            f"train_f1:{batch_f1:.5f} |"
+            f"valid_loss:{running_loss:.5f} | "
+            f"valid_acc:{running_acc:.5f} | "
+            f"valid_f1:{running_f1:.5f}"
+            )
+
+# class_weigths 계산
+def get_class_weights(df):
+    _ , class_num = np.unique(df['class'], return_counts = True)
+    print("Class Balance: ", class_num)
+    base_class = np.max(class_num)
+    class_weigth = (base_class / np.array(class_num))
+    return class_weigth
+
+# 필요 없는 것!
 def reset_wandb_env():
     exclude = {
         "WANDB_PROJECT",
