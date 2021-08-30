@@ -115,8 +115,6 @@ if __name__ == "__main__":
         print("Train Start!!")
         best_model = train(train_loader, valid_loader, class_weigth, -1, config)
 
-        # best_model을 저장? 미구현 Train 안에서 저장 중
-
     # Cross validation 할때
     else:       
         print(f'{config.k_fold_num} cross validation strat...')
@@ -147,5 +145,3 @@ if __name__ == "__main__":
             print("Train Start!!")
             best_model = train(train_loader, valid_loader, class_weigth, fold_index, config)
             run.finish()
-
-        # best_model을 저장? 미구현 Train 안에서 저장 중
