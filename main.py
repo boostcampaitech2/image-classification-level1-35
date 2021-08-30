@@ -41,9 +41,8 @@ if __name__ == "__main__":
     config_file_name = CONFIG_PATH.split('/')[1].split('.')[0]
     config = read_config(CONFIG_PATH)
     config.config_file_name = config_file_name
-    # 나중에 config로 바꿔줄 인자들
-    # For Augmentation
-    aug_targets = [8, 11, 14, 17]
+  
+    # trasform
     transform_train = Compose([
         RandomCrop(always_apply=True, height=384, width=384, p=1.0),
         HorizontalFlip(p=0.5),
@@ -79,7 +78,7 @@ if __name__ == "__main__":
     # if config.augmentation:
     #     print("-"*10,"Start Augmentation", "-"*10)
     #     print("Target: ", aug_targets)
-    #     preprocess = Preprocessing(img_list, y_list, aug_targets, config.aug_num)
+    #     preprocess = Preprocessing(img_list, y_list, config.aug_targets, config.aug_num)
     #     preprocess.augmentation()
     #     # augmentation된 이미지까지 추가된 path, label 받아오기
     #     img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
