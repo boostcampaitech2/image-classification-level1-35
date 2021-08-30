@@ -36,7 +36,7 @@ class Preprocessing():
                 processed_img.save(new_path)
 
 # Dataset 클래스 정의
-class TrainDataset_v2(Dataset):
+class TrainDataset(Dataset):
     # img_list = 훈련할 이미지 경로들
     # label_list = 위 이미지에 맞는 라벨들
     # transform = 전처리 정의
@@ -148,7 +148,6 @@ def get_label(df, model_type):
         df.loc[(df['mask']=='wear'), 'class'] = 0
         df.loc[(df['mask']=='not wear'), 'class'] = 1
         df.loc[(df['mask']=='incorrect'), 'class'] = 2
-
     elif model_type == 'Age':
         df.loc[(df['age'] < 30), 'class'] = 0
         df.loc[(df['age'] >= 30)&(df['age']< 60), 'class'] = 1
@@ -192,7 +191,7 @@ def make_fold(fold_num, df):
     df2 = df
     num_of_person = len(pd.unique(df['id']))
     fold_size = int(num_of_person / fold_num)
-    for i in range(2):
+    for i in range(fold_num):
         v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, replace=False)
         df2 = df2[~df2['id'].isin(v)]
         folds.append(v)

@@ -1,1 +1,4 @@
 wandb/
+configs/
+*.log
+*.out
