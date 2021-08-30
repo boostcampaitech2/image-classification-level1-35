@@ -191,7 +191,7 @@ def make_fold(fold_num, df):
     df2 = df
     num_of_person = len(pd.unique(df['id']))
     fold_size = int(num_of_person / fold_num)
-    for i in range(2):
+    for i in range(fold_num):
         v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, replace=False)
         df2 = df2[~df2['id'].isin(v)]
         folds.append(v)

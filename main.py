@@ -72,6 +72,8 @@ if __name__ == "__main__":
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
 
+    print(np.array(folds).shape)
+    exit(1)
     # augmentation == True 이면 
     # 정해신 target class에 대한 이미지만 augmentation
     # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
