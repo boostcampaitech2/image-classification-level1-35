@@ -110,13 +110,13 @@ class VGG19(nn.Module):
         x = self.pretrained(x)
         return x
 
-def get_model(config, num_classes):
+def get_model(config):
     if config.model_name == 'efficientnet_b3a':
-        model = Efficientnet(num_classes=num_classes).to(config.device)
+        model = Efficientnet(num_classes=config.num_classes).to(config.device)
     elif config.model_name == 'swsl_resnext50_32x4d':
-        model = SWSLResnext50(num_classes=num_classes).to(config.device)
+        model = SWSLResnext50(num_classes=config.num_classes).to(config.device)
     elif config.model_name == 'mobilenetv2_100':
-        model = MobilenetV3(num_classes=num_classes).to(config.device)     
+        model = MobilenetV3(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'vgg19_bn':
         model = VGG19(num_classes=3).to(config.device)     
     elif config.model_name == 'vit_base_patch16_384':
