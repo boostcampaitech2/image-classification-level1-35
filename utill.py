@@ -28,14 +28,14 @@ def read_config(paths):
     config.loss1_weight = float(values['training']['loss1_weight'])
     config.loss2_weight = float(values['training']['loss2_weight'])
     config.model_name = values['training']['model_name']
-    config.ealry_stopping = int(values['training']['ealry_stopping'])
+    config.early_stopping = int(values['training']['early_stopping'])
     config.k_fold_num = int(values['training']['k_fold_num'])
     config.epoches = int(values['training']['epoches'])
     config.lr = float(values['training']['lr'])
     config.batch_size = int(values['training']['batch_size'])
     config.train_csv_path = values['training']['train_csv_path']
     config.train_images_path = values['training']['train_images_path']
-
+    config.prediction_type =  values['training']['prediction_type']
     return config
 
 def reset_wandb_env():

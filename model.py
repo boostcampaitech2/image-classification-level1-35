@@ -14,39 +14,7 @@ from einops.layers.torch import Rearrange, Reduce
 from torchsummary import summary
 import timm
 
-# 지금까지 최고 성능 Efficientnet
-class Efficientnet(nn.Module):
-    def __init__(self, num_classes: int = 1000):
-        super().__init__()
-        self.pretrained = timm.create_model('efficientnet_b3a', pretrained=True)
-        self.pretrained.classifier = nn.Sequential(
-            nn.Linear(1536, 512, bias=True),
-            nn.LeakyReLU(0.3),
-            nn.Linear(512, num_classes, bias=True),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.pretrained(x)
-        return x
-
-class SWSLResnext50(nn.Module):
-    def __init__(self, num_classes: int = 1000):
-        super().__init__()
-        self.pretrained = timm.create_model('swsl_resnext50_32x4d', pretrained=True)
-        self.pretrained.fc = nn.Sequential(
-            nn.Linear(2048, 512, bias=True),
-            nn.LeakyReLU(0.3),
-            nn.Linear(512, 18, bias=True),
-            # nn.LeakyReLU(0.3),
-            # nn.Linear(256, 18, bias=True),
-        )
-        #nn.init.xavier_uniform(self.efficient.classifier.weight)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.pretrained(x)
-        return x
-      
-class Resnet(nn.Module):
+class MyModel(nn.Module):
     def __init__(self, num_classes: int = 1000):
         super(MyModel, self).__init__()
         self.pretrained = cvmodels.resnet50(pretrained=True)
@@ -65,3 +33,95 @@ class Resnet(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+class Efficientnet(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('efficientnet_b3a', pretrained=True)
+        self.pretrained.classifier = nn.Sequential(
+            nn.Linear(1536, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+            # nn.LeakyReLU(0.3),
+            # nn.Linear(256, 18, bias=True),
+        )
+        #nn.init.xavier_uniform(self.efficient.classifier.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+class SWSLResnext50(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('swsl_resnext50_32x4d', pretrained=True)
+        self.pretrained.fc = nn.Sequential(
+            nn.Linear(2048, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+            # nn.LeakyReLU(0.3),
+            # nn.Linear(256, 18, bias=True),
+        )
+        #nn.init.xavier_uniform(self.efficient.classifier.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+class MobilenetV3(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('mobilenetv2_100', pretrained=True)
+        self.pretrained.classifier = nn.Sequential(
+            nn.Linear(1280, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+class VIT(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('vit_base_patch16_384', pretrained=True)
+        self.pretrained.head = nn.Sequential(
+            nn.Linear(768, 256, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(256, num_classes, bias=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+class VGG19(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('vgg19_bn', pretrained=True)
+        self.pretrained.head.fc = nn.Sequential(
+            nn.Linear(4096, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
+def get_model(config, num_classes):
+    if config.model_name == 'efficientnet_b3a':
+        model = Efficientnet(num_classes=num_classes).to(config.device)
+    elif config.model_name == 'swsl_resnext50_32x4d':
+        model = SWSLResnext50(num_classes=num_classes).to(config.device)
+    elif config.model_name == 'mobilenetv2_100':
+        model = MobilenetV3(num_classes=num_classes).to(config.device)     
+    elif config.model_name == 'vgg19_bn':
+        model = VGG19(num_classes=3).to(config.device)     
+    elif config.model_name == 'vit_base_patch16_384':
+        model = VIT(num_classes=3).to(config.device)     
+    return model
+
+
+##
