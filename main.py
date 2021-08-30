@@ -94,7 +94,7 @@ if __name__ == "__main__":
     if config.k_fold_num == -1:
         group_name = f'{config.model_name}'
         name = f'{config.model_name}_{config_file_name}'
-        wandb.init(project='Ageclassificiation', entity='kyunghyun', name=name, group=group_name, config=config, settings=wandb.Settings(start_method="fork"))
+        wandb.init(project='Gender_with_mask_classificiation', entity='amber-chaeeunk', name=name, group=group_name, config=config, settings=wandb.Settings(start_method="fork"))
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
@@ -139,7 +139,7 @@ if __name__ == "__main__":
             group_name = f'{config.model_name}_fold'
             name = f'{config.model_name}_{config_file_name}_{fold_index}'
 
-            run = wandb.init(project='Ageclassificiation', entity='kyunghyun', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
+            run = wandb.init(project='Gender_with_mask_classificiation', entity='amber-chaeeunk', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
             if config.prediction_type == 'Age' or 'Gender':
                 if config.learning_type == 'None':
