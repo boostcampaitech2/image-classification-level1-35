@@ -41,6 +41,7 @@ def read_config(paths):
     config.train_images_path = values['training']['train_images_path']
     config.prediction_type =  values['training']['prediction_type']
     config.learning_type = values['training']['learning_type']
+    config.num_classes = int(values['training']['num_classes'])
     
     return config
 
