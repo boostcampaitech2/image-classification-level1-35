@@ -40,6 +40,8 @@ def read_config(paths):
     config.train_csv_path = values['training']['train_csv_path']
     config.train_images_path = values['training']['train_images_path']
     config.prediction_type =  values['training']['prediction_type']
+    config.learning_type = values['training']['learning_type']
+    
     return config
 
 # dict에 학습 결과 기록
