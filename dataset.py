@@ -36,7 +36,7 @@ class Preprocessing():
                 processed_img.save(new_path)
 
 # Dataset 클래스 정의
-class TrainDataset_v2(Dataset):
+class TrainDataset(Dataset):
     # img_list = 훈련할 이미지 경로들
     # label_list = 위 이미지에 맞는 라벨들
     # transform = 전처리 정의
@@ -148,7 +148,6 @@ def get_label(df, model_type):
         df.loc[(df['mask']=='wear'), 'class'] = 0
         df.loc[(df['mask']=='not wear'), 'class'] = 1
         df.loc[(df['mask']=='incorrect'), 'class'] = 2
-
     elif model_type == 'Age':
         df.loc[(df['age'] < 30), 'class'] = 0
         df.loc[(df['age'] >= 30)&(df['age']< 60), 'class'] = 1

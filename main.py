@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
     # if config.augmentation:
     #     print("-"*10,"Start Augmentation", "-"*10)
-    #     print("Target: ", aug_targets)
+    #     print("Target: ", config.aug_targets)
     #     preprocess = Preprocessing(img_list, y_list, config.aug_targets, config.aug_num)
     #     preprocess.augmentation()
     #     # augmentation된 이미지까지 추가된 path, label 받아오기
@@ -100,10 +100,10 @@ if __name__ == "__main__":
                                 shuffle=True, random_state=42, stratify=df['class'])
         
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-        train_dataset = TrainDataset_v2(np.array(train_img), np.array(train_y), transform_train)
+        train_dataset = TrainDataset(np.array(train_img), np.array(train_y), transform_train)
         
         # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-        valid_dataset = TrainDataset_v2(np.array(valid_img), np.array(valid_y), transform_valid)
+        valid_dataset = TrainDataset(np.array(valid_img), np.array(valid_y), transform_valid)
     
         # DataLoader에 넣어주기
         train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
@@ -132,10 +132,10 @@ if __name__ == "__main__":
             print(f'Train_Data: {len(train_list)}, Validation_Data: {len(valid_list)}')
 
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-            train_dataset = TrainDataset_v2(np.array(train_list), np.array(train_label), transform_train)
+            train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
             
             # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-            valid_dataset = TrainDataset_v2(np.array(valid_list), np.array(valid_label), transform_valid)
+            valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid)
             
             # DataLoader에 넣어주기
             train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
