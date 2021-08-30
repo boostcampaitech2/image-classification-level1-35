@@ -35,7 +35,7 @@ def read_config(paths):
     config.batch_size = int(values['training']['batch_size'])
     config.train_csv_path = values['training']['train_csv_path']
     config.train_images_path = values['training']['train_images_path']
-
+    config.prediction_type =  values['training']['prediction_type']
     return config
 
 def reset_wandb_env():

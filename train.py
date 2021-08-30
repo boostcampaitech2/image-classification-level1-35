@@ -306,24 +306,30 @@ if __name__ == "__main__":
     print("-"*10, "-----------", "-"*10)
 
     # 데이터 불러오기
+
     print("Data Loading...")
-    img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
+    # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
+    df = new_train_dataset(config.train_csv_path, config.train_images_path)
+    df = get_label(df, config.prediction_type)
+    if config.k_fold_num != -1:
+        folds = make_fold(config.k_fold_num, df)
+    
     
     # augmentation == True 이면 
     # 정해신 target class에 대한 이미지만 augmentation
     # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
-    if config.augmentation:
-        print("-"*10,"Start Augmentation", "-"*10)
-        print("Target: ", aug_targets)
-        preprocess = Preprocessing(img_list, y_list, aug_targets, config.aug_num)
-        preprocess.augmentation()
-        # augmentation된 이미지까지 추가된 path, label 받아오기
-        img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
-        print("-"*10,"End Augmentation", "-"*10)    
+    # if config.augmentation:
+    #     print("-"*10,"Start Augmentation", "-"*10)
+    #     print("Target: ", aug_targets)
+    #     preprocess = Preprocessing(img_list, y_list, aug_targets, config.aug_num)
+    #     preprocess.augmentation()
+    #     # augmentation된 이미지까지 추가된 path, label 받아오기
+    #     img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
+    #     print("-"*10,"End Augmentation", "-"*10)    
     
     # unbalanced 클래스에 가중치를 주기 위한 것
     # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
-    _ , class_num = np.unique(y_list, return_counts = True)
+    _ , class_num = np.unique(df['class'], return_counts = True)
     
     print("Class Balance: ", class_num)
     #class_num = [y_list.count(i) for i in sorted(pd.unique(y_list))]
@@ -346,14 +352,14 @@ if __name__ == "__main__":
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
-        train_img, valid_img, train_y, valid_y = train_test_split(img_list, y_list, train_size=0.8, 
-                                shuffle=True, random_state=42, stratify=y_list)
+        train_img, valid_img, train_y, valid_y = train_test_split(df['path'], df['class'], train_size=0.8, 
+                                shuffle=True, random_state=42, stratify=df['class'])
         
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-        train_dataset = TrainDataset_v2(train_img, train_y, transform_train)
+        train_dataset = TrainDataset_v2(np.array(train_img), np.array(train_y), transform_train)
         
         # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-        valid_dataset = TrainDataset_v2(valid_img, valid_y, transform_valid)
+        valid_dataset = TrainDataset_v2(np.array(valid_img), np.array(valid_y), transform_valid)
     
         # DataLoader에 넣어주기
         train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
@@ -369,12 +375,12 @@ if __name__ == "__main__":
     # Cross validation 할때
     else:
         # K개의 corss validation 준비
-        kf = StratifiedKFold(n_splits=config.k_fold_num, random_state=42, shuffle=True)
+        #kf = StratifiedKFold(n_splits=config.k_fold_num, random_state=42, shuffle=True)
         
         print(f'{config.k_fold_num} cross validation strat...')
         
         # kf가 랜덤으로 섞어서 추출해 index들을 반환
-        for fold_index, (train_idx, valid_idx) in enumerate(kf.split(img_list, y_list), 1):
+        for fold_index, valid_ids in enumerate(folds):
             print(f'{fold_index} fold start -')
             group_name = f'{config.model_name}_fold'
             name = f'{config.model_name}_{config_file_name}_{fold_index}'
@@ -386,15 +392,17 @@ if __name__ == "__main__":
             #     group_name = f'{config.loss}_fold'
             #     name = f'{config.loss}_{fold_index}'
             run = wandb.init(project='Ageclassificiation', entity='kyunghyun', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
-            # index로 array 나누기
-            train_list, train_label = img_list[train_idx], y_list[train_idx]
-            valid_list, valid_label = img_list[valid_idx], y_list[valid_idx]
             
+            train_list, train_label = df[~df['id'].isin(valid_ids)]['path'], df[~df['id'].isin(valid_ids)]['class']
+            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+            
+            print(f'Train_Data: {len(train_list)}, Validation_Data: {len(valid_list)}')
+
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-            train_dataset = TrainDataset_v2(train_list, train_label, transform_train)
+            train_dataset = TrainDataset_v2(np.array(train_list), np.array(train_label), transform_train)
             
             # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-            valid_dataset = TrainDataset_v2(valid_list, valid_label, transform_valid)
+            valid_dataset = TrainDataset_v2(np.array(valid_list), np.array(valid_label), transform_valid)
             
             # DataLoader에 넣어주기
             train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
