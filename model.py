@@ -118,7 +118,7 @@ def get_model(config, num_classes):
     elif config.model_name == 'mobilenetv2_100':
         model = MobilenetV3(num_classes=num_classes).to(config.device)     
     elif config.model_name == 'vgg19_bn':
-        model = VGG19(num_classes=3).to(config.device)     
+        model = VGG19(num_classes=2).to(config.device)
     elif config.model_name == 'vit_base_patch16_384':
-        model = VIT(num_classes=3).to(config.device)     
+        model = VIT(num_classes=2).to(config.device)
     return model

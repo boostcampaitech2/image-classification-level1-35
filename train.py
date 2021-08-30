@@ -45,7 +45,7 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
     #     dropout_ratio = 0.1,
     #     n_classes = 18).to(device)
     #model = Efficientnet(num_classes=18).to(config.device)
-    model = get_model(config, num_classes=3)
+    model = get_model(config, num_classes=2)
     wandb.watch(model)
     #model = SWSLResnext50(num_classes = 18).to(device)
     # Backbone freezing
@@ -248,8 +248,8 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
 if __name__ == "__main__":
     argv = sys.argv
     FILE_NAME = argv[0] # 실행시키는 파일명
-    CONFIG_PATH = ""   # config file 경로
-    
+    CONFIG_PATH = "./configs/"   # config file 경로
+
     try:
         # 파일명 이후 부터 입력 받는 옵션
         # help, config_path
@@ -265,14 +265,14 @@ if __name__ == "__main__":
             print(FILE_NAME, "-c <config_path>")
             sys.exit(0)
         elif opt in ("-c", "--config_path"):
-            CONFIG_PATH = arg
+            CONFIG_PATH = CONFIG_PATH+arg
     
     # 입력이 필수적인 옵션
     if len(CONFIG_PATH) < 1:
         print(FILE_NAME, "-c <config_path> is madatory")
         sys.exit(2)
-        
-    config_file_name = CONFIG_PATH.split('/')[1].split('.')[0]
+
+    config_file_name = CONFIG_PATH.split('/')[2].split('.')[0]
     config = read_config(CONFIG_PATH)
     config.config_file_name = config_file_name
     # 나중에 config로 바꿔줄 인자들
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         # else:
         #     group_name = f'{config.loss}'
         #     name = f'{config.loss}'
-        wandb.init(project='Ageclassificiation', entity='kyunghyun', name=name, group=group_name, config=config, settings=wandb.Settings(start_method="fork"))
+        wandb.init(project='image_classification', entity='juyoung', name=name, group=group_name, config=config, settings=wandb.Settings(start_method="fork"))
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
@@ -385,7 +385,7 @@ if __name__ == "__main__":
             # else:
             #     group_name = f'{config.loss}_fold'
             #     name = f'{config.loss}_{fold_index}'
-            run = wandb.init(project='Ageclassificiation', entity='kyunghyun', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
+            run = wandb.init(project='image_classification', entity='juyoung', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             # index로 array 나누기
             train_list, train_label = img_list[train_idx], y_list[train_idx]
             valid_list, valid_label = img_list[valid_idx], y_list[valid_idx]

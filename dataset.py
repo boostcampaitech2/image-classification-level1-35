@@ -81,13 +81,11 @@ def get_label(path):
         # mask1 부분 가져오기
         mask_status = items[1].split('.')[0]
         
-        # age 단일 라벨로 수정
-        if int(age) < 30:
+        # 성별 단일 라벨로 수정
+        if sex == 'male':
             return 0
-        elif int(age) < 60:
-            return 1
         else:
-            return 2
+            return 1
 
         # class 조건에 따라 분류
         # mask먼저 분류하면 incorrect_mask도 포함이 되서 incorrect 먼저 분류
