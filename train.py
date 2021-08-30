@@ -15,7 +15,7 @@ import wandb
 def train(train_loader, valid_loader, class_weigth, fold_index, config):
     # 모델 생성
     print("Model Generation...")
-    model = get_model(config, num_classes=3)
+    model = get_model(config, config.num_classes)
     wandb.watch(model)
     # 모델 정보 출력
     print(model)
