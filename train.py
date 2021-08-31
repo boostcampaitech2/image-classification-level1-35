@@ -11,6 +11,7 @@ from optimizer import *
 from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 import wandb
+import torch.cuda
 
 def train(train_loader, valid_loader, class_weigth, fold_index, config):
     # 모델 생성
@@ -38,6 +39,7 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
         'valid_f1':[]
         }
     print("-"*10, "Training", "-"*10)
+
     for e in range(1, config.epoches + 1):
         batch_loss, batch_f1 = train_per_epoch(train_loader, model, loss_func, optimizer, config)
         running_loss, running_acc, running_f1, examples = vlidation_per_epoch(valid_loader, model, loss_func, config)
@@ -88,6 +90,7 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
     batch_f1_pred = []
     batch_f1_target = []
     # train
+    torch.cuda.empty_cache() 
     for tr_idx, (X, y) in enumerate(tqdm(train_loader)):
         x = X.to(config.device)
         y = y.to(config.device)
