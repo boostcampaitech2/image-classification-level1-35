@@ -126,9 +126,9 @@ if __name__ == "__main__":
         for fold_index, valid_ids in enumerate(folds):
             print(f'{fold_index} fold start -')
             group_name = f'{config.model_name}_fold'
-            name = f'{config.model_name}_{config_file_name}_{fold_index}'
+            name = f'{config.wandb_name}_{fold_index}'
 
-            run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=config.wandb_name, config=config, settings=wandb.Settings(start_method="fork"))
+            run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
