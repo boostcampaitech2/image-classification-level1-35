@@ -99,19 +99,22 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         
         if config.cutmix == 'True' and config.beta > 0 and np.random.random()>0.5:
             lam = np.random.beta(config.beta,config.beta)
-            rand_index = torch.randperm(X.size()[0]).to(config.device)
+            rand_index = torch.randperm(x.size()[0]).to(config.device)
             target_a = y
             target_b = y[rand_index]            
-            bbx1, bby1, bbx2, bby2 = rand_bbox(X.size(), lam)
-            X[:, :, bbx1:bbx2, bby1:bby2] = X[rand_index, :, bbx1:bbx2, bby1:bby2]
-            lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (X.size()[-1] * X.size()[-2]))
-            outputs = model(X)
-            loss = loss_func(outputs, target_a) * lam + loss_func(outputs, target_b) * (1. - lam)
+            bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
+            x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
+            lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (x.size()[-1] * X.size()[-2]))
+            output = model.forward(x)
+            loss = loss_func(output, target_a) * lam + loss_func(output, target_b) * (1. - lam)
+            loss.backward()
+            optimizer.step()
+            continue
         else:
             pred = model.forward(x)
             loss = loss_func(pred, y)
-        loss.backward()
-        optimizer.step()
+            loss.backward()
+            optimizer.step()
 
         batch_loss += loss.cpu().data
         batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))

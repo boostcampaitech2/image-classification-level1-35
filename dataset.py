@@ -12,6 +12,7 @@ from pandas_streaming.df import train_test_apart_stratify
 
 # 추가데이터 가져오기 
 new_train = pd.read_csv('/opt/ml/input/data/new_image/new_train.csv')
+new_train_cutmix = pd.read_csv('/opt/ml/input/data/new_image/new_train_cutmix.csv')
 new_train_with_mask = pd.read_csv('/opt/ml/input/data/new_image_with_mask/new_train_with_mask.csv')
 new_train_with_mask_1 = pd.read_csv('/opt/ml/input/data/new_image_with_mask/new_train_with_mask_1.csv')
 
@@ -148,19 +149,6 @@ def new_train_dataset(train_path, img_path):
                     'path': final_path})
 
     return df
-
-## 현수님
-def new_train_dataset_2(train_path): # made by 현수
-    raw = pd.read_csv(train_path)
-    raw["gender"] = raw["gender"].map({np.nan:"male"})
-    raw["age"] = raw["age"].map({np.nan:"0"})
-    df = pd.DataFrame({'id': raw["id"], 
-                    'gender': raw["gender"], 
-                    'age': raw["age"], 
-                    'mask': raw["mask"], 
-                    'path': raw["path"]})
-    return df
-## 현수님
 
 def get_label(df, model_type):
     if model_type == 'Mask':

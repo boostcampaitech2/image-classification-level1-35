@@ -3,3 +3,4 @@ configs/
 *.log
 *.out
 nohup.out
+__pycache__/
