@@ -30,7 +30,7 @@ def read_config(paths):
     config.train_images_path = values['path']['train_images_path']
     config.model_save_path = values['path']['model_save_path']
     config.result_save_path = values['path']['result_save_path']
-    config.save_name = values['path']['mbnet_early_up']
+    config.save_name = values['path']['save_name']
 
     # For 학습
     config.optimizer = values['training']['optimizer']
