@@ -110,6 +110,23 @@ class VGG19(nn.Module):
         x = self.pretrained(x)
         return x
 
+class SiameseNet(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('efficientnet_b3a', pretrained=True)
+        self.pretrained.classifier = nn.Sequential(
+            nn.Linear(1536, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+            # nn.LeakyReLU(0.3),
+            # nn.Linear(256, 18, bias=True),
+        )
+        #nn.init.xavier_uniform(self.efficient.classifier.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.pretrained(x)
+        return x
+
 def get_model(config):
     if config.model_name == 'efficientnet_b3a':
         model = Efficientnet(num_classes=config.num_classes).to(config.device)
