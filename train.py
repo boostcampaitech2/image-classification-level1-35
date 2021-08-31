@@ -60,9 +60,9 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
             print("-"*10, "Best model changed", "-"*10)
             print("-"*10, "Model_save", "-"*10)
             if fold_index == -1:
-                torch.save(model, f'../models/{config.model_name}/{config.model_name}_{config.config_file_name}_best.pt')
+                torch.save(model, f'{config.model_save_path}models/{config.save_name}/{config.save_name}_best.pt')
             else:
-                torch.save(model, f'../models/{config.model_name}/fold_{fold_index}_{config.config_file_name}_{config.model_name}_best.pt')
+                torch.save(model, f'{config.model_save_path}models/{config.save_name}/fold_{fold_index}_{config.save_name}_best.pt')           
             best_metric = running_f1
             best_model_dict = model.state_dict()
             print("-"*10, "Saved!!", "-"*10)
@@ -71,9 +71,9 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
 
         # result dict 저장
         if fold_index == -1:
-            pd.DataFrame(result).to_csv(f'../results/{config.model_name}/{config.model_name}_{config.config_file_name}_result.csv', index=False)
+            pd.DataFrame(result).to_csv(f'{config.result_save_path}results/{config.save_name}/{config.save_name}_result.csv', index=False)
         else:
-            pd.DataFrame(result).to_csv(f'../results/{config.model_name}/fold_{fold_index}_{config.config_file_name}_{config.model_name}_result.csv', index=False)
+            pd.DataFrame(result).to_csv(f'{config.result_save_path}results/{config.save_name}/fold_{fold_index}_{config.save_name}_result.csv', index=False)
 
         if early_stopping_count == config.early_stopping:
             print("-"*10, "Early Stop!!!!", "-"*10)

@@ -44,7 +44,7 @@ if __name__ == "__main__":
   
     # trasform
     transform_train = Compose([
-        Resize(384,384),
+        Resize(width = 384, height = 384),
         # RandomCrop(always_apply=True, height=384, width=384, p=1.0),
         HorizontalFlip(p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -58,8 +58,8 @@ if __name__ == "__main__":
     ])
 
     # 결과 및 모델 저장할 폴더
-    create_dir([f'../results/{config.model_name}', f'../models/{config.model_name}'])
-    
+    create_dir([f'{config.result_save_path}results/{config.save_name}', f'{config.model_save_path}models/{config.save_name}'])
+
     config.device = 'cuda' if  torch.cuda.is_available() else 'cpu'
     print("-"*10, "Device info", "-"*10)
     print(config.device)
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     if config.k_fold_num == -1:
         group_name = f'{config.model_name}'
         name = f'{config.model_name}_{config_file_name}'
-        wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=config.wandb_name, config=config, settings=wandb.Settings(start_method="fork"))
+        wandb.init(project=config.wandb_project_name, group=config.wandb_group_name, name=config.wandb_name, config=config, settings=wandb.Settings(start_method="fork"))
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
@@ -130,7 +130,7 @@ if __name__ == "__main__":
             group_name = f'{config.model_name}_fold'
             name = f'{config.wandb_name}_{fold_index}'
 
-            run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
+            run = wandb.init(project=config.wandb_project_name, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             

@@ -9,6 +9,11 @@ from torchvision import transforms as T
 from albumentations import *
 import matplotlib.pyplot as plt
 
+# 추가데이터 가져오기 
+new_train = pd.read_csv('/opt/ml/input/data/new_image/new_train.csv')
+new_train_with_mask = pd.read_csv('/opt/ml/input/data/new_image_with_mask/new_train_with_mask.csv')
+new_train_with_mask_1 = pd.read_csv('/opt/ml/input/data/new_image_with_mask/new_train_with_mask_1.csv')
+
 # Data augmentation을 위한 클래스
 class Preprocessing():
     def __init__(self, pathes, labels, targets, aug_num):
@@ -199,6 +204,10 @@ def make_train_list(df, config, valid_ids):
         else:
             print("Wrong learning type!!")
             exit(1)
+        train_list = pd.concat([train_list,new_train_with_mask_1.path])
+        train_label = pd.concat([train_label,new_train_with_mask_1.gender])
+        print(train_label.value_counts())
+
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
         valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
