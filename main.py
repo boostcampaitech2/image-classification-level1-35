@@ -44,8 +44,8 @@ if __name__ == "__main__":
   
     # trasform
     transform_train = Compose([
-        # Resize((384,384)),
-        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(384,384),
+        # RandomCrop(always_apply=True, height=384, width=384, p=1.0),
         HorizontalFlip(p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
@@ -146,8 +146,8 @@ if __name__ == "__main__":
             if config.prediction_type == 'Age' or 'Gender':
                 if config.learning_type == 'None':
                     train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
-                    # train_list = pd.concat([train_list,df2.path])
-                    # train_label = pd.concat([train_label,df2.gender])
+                    train_list = pd.concat([train_list,df2.path])
+                    train_label = pd.concat([train_label,df2.gender])
                     valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
                 elif config.learning_type == 'Mask':
                     train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
