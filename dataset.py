@@ -8,6 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 from albumentations import *
 import matplotlib.pyplot as plt
+from pandas_streaming.df import train_test_apart_stratify
 
 # 추가데이터 가져오기 
 new_train = pd.read_csv('/opt/ml/input/data/new_image/new_train.csv')
@@ -218,7 +219,7 @@ def make_train_list(df, config, valid_ids):
                 train_list = pd.concat([train_list,new_train_with_mask_1.path.loc[new_train_with_mask_1.type != 1]])
                 train_label = pd.concat([train_label,new_train_with_mask_1.gender.loc[new_train_with_mask_1.type != 1]])
         elif config.learning_type == 'All':
-            train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
+            train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
             valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
             if config.add_data == 'True':
                 train_list = pd.concat([train_list,new_train_with_mask_1.path])
@@ -241,12 +242,48 @@ def make_fold(fold_num, df):
     df2 = df
     num_of_person = len(pd.unique(df['id']))
     fold_size = int(num_of_person / fold_num)
+    # ver1
+    # for i in range(fold_num):
+    #     v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, random_state=42, replace=False)
+    #     df2 = df2[~df2['id'].isin(v)]
+    #     folds.append(v)
+    # del df2
+    
+    # ver2
     for i in range(fold_num):
-        v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, replace=False)
-        df2 = df2[~df2['id'].isin(v)]
-        folds.append(v)
+        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=0.2, random_state = 42)
+        df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
+        folds.append(test['id'])
     del df2
+
     return folds
+
+def read_age_data():
+    path = '../../input/data/train/Age/'
+    img_dict = {'id':[], 'age':[], 'path':[], 'class':[]}
+    for img_path in os.listdir(path):
+        if img_path == '.ipynb_checkpoints':
+            continue
+        try:
+            age, id = img_path.split('(')
+        except:
+            print(img_path)
+            exit(1)
+        img_dict['id'].append(id[:-5])
+        img_dict['age'].append(int(age))
+        img_dict['path'].append(os.path.join(path, img_path))
+        img_dict['class'].append(get_label_added_data_for_age(int(age)))
+
+    return pd.DataFrame(img_dict)
+
+def get_label_added_data_for_age(age):
+    if age < 30:
+        return 0
+    elif age < 60:
+        return 1
+    else:
+        return 2
+
 
 # 이미지 전체 경로 생성
 # train.csv의 path 컬럼 이용

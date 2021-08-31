@@ -44,15 +44,16 @@ if __name__ == "__main__":
   
     # trasform
     transform_train = Compose([
-        Resize(width = 384, height = 384),
+        # Resize(width = 384, height = 384),
         # RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
         HorizontalFlip(p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
-        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -76,6 +77,9 @@ if __name__ == "__main__":
     
     df = get_label(df, config.prediction_type)
 
+    if config.prediction_type == 'Age':
+        age_df = read_age_data()
+
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
     print(df)
@@ -95,7 +99,6 @@ if __name__ == "__main__":
     
     # unbalanced 클래스에 가중치를 주기 위한 것
     # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
-    class_weigth = get_class_weights(df)
     
     # Cross validation 안할때
     if config.k_fold_num == -1:
@@ -106,9 +109,15 @@ if __name__ == "__main__":
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
     
-        valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, replace=False)
+        valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, random_state=42, replace=False)
         train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
         
+        if config.prediction_type == 'Age':
+            train_list = pd.concat([train_list, age_df['path']], axis=0)
+            train_label = pd.concat([train_label, age_df['class']], axis=0)
+
+        class_weigth = get_class_weights(train_label)
+
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
         train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
         
@@ -138,7 +147,13 @@ if __name__ == "__main__":
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
-            print(f'Train_Data: {len(train_list)}, Validation_Data: {len(valid_list)}')
+            if config.prediction_type == 'Age':
+                train_list = pd.concat([train_list, age_df['path']], axis=0)
+                train_label = pd.concat([train_label, age_df['class']], axis=0)
+  
+            print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
+
+            class_weigth = get_class_weights(train_label)
 
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
             train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
