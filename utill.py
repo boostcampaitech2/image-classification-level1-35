@@ -20,11 +20,24 @@ def read_config(paths):
     values = configparser.ConfigParser()
     values.read(paths, encoding='utf-8')
 
+    # For Aug
     config.augmentation = values['augmentation'].getboolean('augmentation', "b")
     config.load_augmentation = values['augmentation'].getboolean('load_augmentation', "b")
     config.aug_num = int(values['augmentation']['aug_num'])
-    #config.aug_targets = values['agmentation']['augmentation']
     
+    # For Path
+    config.train_csv_path = values['path']['train_csv_path']
+    config.train_images_path = values['path']['train_images_path']
+    config.model_save_path = values['path']['model_save_path']
+    config.result_save_path = values['path']['result_save_path']
+    config.save_name = values['path']['save_name']
+
+    # For wandb
+    config.wandb_group_name = values['wandb']['wandb_group_name']
+    config.wandb_name = values['wandb']['wandb_name']
+    config.wandb_entity = values['wandb']['wandb_entity']
+    config.wandb_project_name = values['wandb']['wandb_project_name']
+
     # For 학습
     config.optimizer = values['training']['optimizer']
     config.scheduler = values['training']['scheduler']
@@ -37,8 +50,6 @@ def read_config(paths):
     config.epoches = int(values['training']['epoches'])
     config.lr = float(values['training']['lr'])
     config.batch_size = int(values['training']['batch_size'])
-    config.train_csv_path = values['training']['train_csv_path']
-    config.train_images_path = values['training']['train_images_path']
     config.prediction_type =  values['training']['prediction_type']
     config.learning_type = values['training']['learning_type']
     config.num_classes = int(values['training']['num_classes'])
