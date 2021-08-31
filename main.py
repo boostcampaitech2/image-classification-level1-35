@@ -100,7 +100,7 @@ if __name__ == "__main__":
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
     
-        valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, replace=False)
+        valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, random_state=42, replace=False)
         train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
         
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
