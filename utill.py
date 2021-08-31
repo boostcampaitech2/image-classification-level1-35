@@ -32,6 +32,12 @@ def read_config(paths):
     config.result_save_path = values['path']['result_save_path']
     config.save_name = values['path']['save_name']
 
+    # For wandb
+    config.wandb_group_name = values['wandb']['wandb_group_name']
+    config.wandb_name = values['wandb']['wandb_name']
+    config.wandb_entity = values['wandb']['wandb_entity']
+    config.wandb_project_name = values['wandb']['wandb_project_name']
+
     # For 학습
     config.optimizer = values['training']['optimizer']
     config.scheduler = values['training']['scheduler']
