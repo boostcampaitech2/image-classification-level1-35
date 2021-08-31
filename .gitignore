@@ -2,5 +2,4 @@ wandb/
 configs/
 *.log
 *.out
-nohup.out
-__pycache__/
+nohup.ou
