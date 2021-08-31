@@ -148,6 +148,19 @@ def new_train_dataset(train_path, img_path):
 
     return df
 
+## 현수님
+def new_train_dataset_2(train_path): # made by 현수
+    raw = pd.read_csv(train_path)
+    raw["gender"] = raw["gender"].map({np.nan:"male"})
+    raw["age"] = raw["age"].map({np.nan:"0"})
+    df = pd.DataFrame({'id': raw["id"], 
+                    'gender': raw["gender"], 
+                    'age': raw["age"], 
+                    'mask': raw["mask"], 
+                    'path': raw["path"]})
+    return df
+## 현수님
+
 def get_label(df, model_type):
     if model_type == 'Mask':
         df.loc[(df['mask']=='wear'), 'class'] = 0
@@ -214,7 +227,7 @@ def make_train_list(df, config, valid_ids):
         else:
             print("Wrong learning type!!")
             exit(1)
-        print('check final trainset : ',train_label.value_counts())
+        print('check final trainset : \n',train_label.value_counts())
 
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
