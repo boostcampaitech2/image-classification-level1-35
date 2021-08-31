@@ -71,8 +71,8 @@ if __name__ == "__main__":
     df = new_train_dataset(config.train_csv_path, config.train_images_path)
     
     ## 현수님 
-    # df2 = new_train_dataset_2("/opt/ml/input/data_add/2/Train/train_add_2.csv")
-    # df = pd.concat([df,df2])
+    df2 = new_train_dataset_2("/opt/ml/input/data_add/2/Train/train_add_2.csv")
+    df = pd.concat([df,df2])
     
     df = get_label(df, config.prediction_type)
 

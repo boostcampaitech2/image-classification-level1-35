@@ -204,7 +204,7 @@ def get_label(df, model_type):
     return df
 
 def make_train_list(df, config, valid_ids):
-    if config.prediction_type == 'Age' or 'Gender':
+    if config.prediction_type in ['Age','Gender']:
         if config.learning_type == 'None':
             train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
             valid_list, valid_label = df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
@@ -227,11 +227,12 @@ def make_train_list(df, config, valid_ids):
         else:
             print("Wrong learning type!!")
             exit(1)
-        print('check final trainset : \n',train_label.value_counts())
 
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
         valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+
+    print('check final trainset : \n',train_label.value_counts())
 
     return train_list, train_label, valid_list, valid_label
 
