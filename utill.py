@@ -53,7 +53,10 @@ def read_config(paths):
     config.prediction_type =  values['training']['prediction_type']
     config.learning_type = values['training']['learning_type']
     config.num_classes = int(values['training']['num_classes'])
-    
+    config.cutmix = values['training']['cutmix']
+    config.add_data = values['training']['add_data']
+    config.beta = float(values['training']['beta'])
+
     return config
 
 # dict에 학습 결과 기록

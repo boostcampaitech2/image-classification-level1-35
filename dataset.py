@@ -195,18 +195,26 @@ def make_train_list(df, config, valid_ids):
         if config.learning_type == 'None':
             train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
             valid_list, valid_label = df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
+            if config.add_data == 'True':
+                train_list = pd.concat([train_list,new_train_with_mask_1.path.loc[new_train_with_mask_1.type == 1]])
+                train_label = pd.concat([train_label,new_train_with_mask_1.gender.loc[new_train_with_mask_1.type == 1]])
         elif config.learning_type == 'Mask':
             train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
             valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+            if config.add_data == 'True':
+                train_list = pd.concat([train_list,new_train_with_mask_1.path.loc[new_train_with_mask_1.type != 1]])
+                train_label = pd.concat([train_label,new_train_with_mask_1.gender.loc[new_train_with_mask_1.type != 1]])
         elif config.learning_type == 'All':
             train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
             valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+            if config.add_data == 'True':
+                train_list = pd.concat([train_list,new_train_with_mask_1.path])
+                train_label = pd.concat([train_label,new_train_with_mask_1.gender])
+
         else:
             print("Wrong learning type!!")
             exit(1)
-        train_list = pd.concat([train_list,new_train_with_mask_1.path])
-        train_label = pd.concat([train_label,new_train_with_mask_1.gender])
-        print(train_label.value_counts())
+        print('check final trainset : ',train_label.value_counts())
 
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']

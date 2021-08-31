@@ -11,6 +11,8 @@ from optimizer import *
 from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 import wandb
+import numpy as np
+
 
 def train(train_loader, valid_loader, class_weigth, fold_index, config):
     # 모델 생성
@@ -92,9 +94,20 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         x = X.to(config.device)
         y = y.to(config.device)
         optimizer.zero_grad()
-
-        pred = model.forward(x)
-        loss = loss_func(pred, y)
+        
+        if config.cutmix == 'True' and config.beta > 0 and np.random.random()>0.5:
+            lam = np.random.beta(config.beta,config.beta)
+            rand_index = torch.randperm(X.size()[0]).to(config.device)
+            target_a = y
+            target_b = y[rand_index]            
+            bbx1, bby1, bbx2, bby2 = rand_bbox(X.size(), lam)
+            X[:, :, bbx1:bbx2, bby1:bby2] = X[rand_index, :, bbx1:bbx2, bby1:bby2]
+            lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (X.size()[-1] * X.size()[-2]))
+            outputs = model(X)
+            loss = loss_func(outputs, target_a) * lam + loss_func(outputs, target_b) * (1. - lam)
+        else:
+            pred = model.forward(x)
+            loss = loss_func(pred, y)
         loss.backward()
         optimizer.step()
 
@@ -138,3 +151,26 @@ def vlidation_per_epoch(valid_loader, model, loss_func, config):
         running_f1 = f1_score(running_f1_target, running_f1_pred, average='macro')
 
         return running_loss, running_acc, running_f1, examples
+
+
+# cutmix box 생성
+
+def rand_bbox(size, lam): # size : [Batch_size, Channel, Width, Height]
+    W = size[2] 
+    H = size[3] 
+    cut_rat = np.sqrt(1. - lam)  # 패치 크기 비율
+    cut_w = np.int(W * cut_rat)
+    cut_h = np.int(H * cut_rat)  
+
+   	# 패치의 중앙 좌표 값 cx, cy
+    cx = np.random.randint(W)
+    cy = np.random.randint(H)
+		
+    # 패치 모서리 좌표 값 
+    bbx1 = 0
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = W
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+   
+    return bbx1, bby1, bbx2, bby2
+
