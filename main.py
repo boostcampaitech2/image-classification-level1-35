@@ -57,7 +57,7 @@ if __name__ == "__main__":
     ])
 
     # 결과 및 모델 저장할 폴더
-    create_dir([f'../../results/{config.model_name}', f'../../models/{config.model_name}'])
+    create_dir([f'{config.result_save_path}results/{config.model_name}', f'{config.model_save_path}models/{config.model_name}'])
     
     config.device = 'cuda' if  torch.cuda.is_available() else 'cpu'
     print("-"*10, "Device info", "-"*10)
