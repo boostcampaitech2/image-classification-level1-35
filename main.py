@@ -100,19 +100,7 @@ if __name__ == "__main__":
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
     
         valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, replace=False)
-        if config.prediction_type == 'Age' or 'Gender':
-            if config.learning_type == 'None':
-                train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
-                valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
-            elif config.learning_type == 'Mask':
-                train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
-                valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
-            else:
-                print("Wrong learning type!!")
-                exit(1)
-        else:
-            train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
-            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+        train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
         
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
         train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
@@ -141,22 +129,7 @@ if __name__ == "__main__":
 
             run = wandb.init(project='Gender_with_mask_classificiation', entity='amber-chaeeunk', group=group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
-            if config.prediction_type == 'Age' or 'Gender':
-                if config.learning_type == 'None':
-                    train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
-                    valid_list, valid_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
-                elif config.learning_type == 'Mask':
-                    train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
-                    valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
-                else:
-                    print("Wrong learning type!!")
-                    exit(1)
-            else:
-                train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
-                valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
-            
-            print(train_list.shape, train_label.shape)
-
+            train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
             print(f'Train_Data: {len(train_list)}, Validation_Data: {len(valid_list)}')
 

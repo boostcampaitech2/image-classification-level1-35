@@ -159,6 +159,25 @@ def get_label(df, model_type):
         print('Wrong Prediction Type!!')
         exit(1)
     
+def make_train_list(df, config, valid_ids):
+    if config.prediction_type == 'Age' or 'Gender':
+        if config.learning_type == 'None':
+            train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
+            valid_list, valid_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
+        elif config.learning_type == 'Mask':
+            train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
+            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+        elif config.learning_type == 'All':
+            train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
+            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+        else:
+            print("Wrong learning type!!")
+            exit(1)
+    else:
+        train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
+        valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+
+    return train_list, train_label, valid_list, valid_label
     # 18 클래스 생성(라벨링)
     #mask=wear
     # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 0
