@@ -99,14 +99,16 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         optimizer.zero_grad()
 
         # pred = model.forward(x)
-         with autocast():
-            pred = model.forward(x, y)
-            loss = loss_func(pred, y)
-        # pred = model.forward(x, y)
-        # loss = loss_func(pred, y)
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        # with autocast():
+        #     pred = model.forward(x, y)
+        #     loss = loss_func(pred, y)
+        pred = model.forward(x, y)
+        loss = loss_func(pred, y)
+        # scaler.scale(loss).backward()
+        loss.backward()
+        optimizer.step()
+        # scaler.step(optimizer)
+        # scaler.update()
 
         batch_loss += loss.cpu().data
         batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
