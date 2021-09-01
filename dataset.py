@@ -227,11 +227,11 @@ def make_fold(fold_num, df):
     # del df2
 
     # return folds
-    cnt = 0
+    # cnt = 0
     for i in range(fold_num):
-        fold_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]
-        # fold_ratio = np.around(540 / len(set(df2['id'])),1)
-        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio[cnt], random_state = 42)
+        # fold_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]
+        fold_ratio = np.around(540 / len(set(df2['id'])),1)
+        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
         cnt += 1
@@ -245,6 +245,35 @@ def make_fold(fold_num, df):
     #     folds.append(test['id'])
     # del df2
     # return folds
+
+
+
+def read_age_data():
+    path = '/opt/ml/input/data/train/add_Age2'
+    img_dict = {'id':[], 'age':[], 'path':[], 'class':[]}
+    for img_path in os.listdir(path):
+        if img_path == '.ipynb_checkpoints':
+            continue
+        try:
+            age, id = img_path.split('(')
+        except:
+            print(img_path)
+            exit(1)
+        img_dict['id'].append(id[:-5])
+        img_dict['age'].append(int(age))
+        img_dict['path'].append(os.path.join(path, img_path))
+        img_dict['class'].append(get_label_added_data_for_age(int(age)))
+    return pd.DataFrame(img_dict)
+
+    
+def get_label_added_data_for_age(age):
+    if age < 30:
+        return 0
+    elif 30 <= age <60:
+        return 1
+    else:
+        return 2
+
 
 # def read_age_data():
 #     path = '../../input/data/train/Age/'
