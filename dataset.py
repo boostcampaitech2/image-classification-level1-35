@@ -212,8 +212,10 @@ def make_train_list(df, config, valid_ids):
             train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
             valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
             if config.add_data == 'True':
-                train_list = pd.concat([train_list,new_train_with_mask_1.path])
-                train_label = pd.concat([train_label,new_train_with_mask_1.gender])
+                train_list = pd.concat([train_list,new_train.path])
+                train_label = pd.concat([train_label,new_train.gender])
+                train_list = pd.concat([train_list,new_train_cutmix.path])
+                train_label = pd.concat([train_label,new_train_cutmix.gender])
 
         else:
             print("Wrong learning type!!")
@@ -240,7 +242,7 @@ def make_fold(fold_num, df):
     
     # ver2
     for i in range(fold_num):
-        fold_ratio = 540 / len(set(df2['id']))
+        fold_ratio = np.around(540 / len(set(df2['id'])),1)
         train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
