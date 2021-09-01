@@ -150,7 +150,6 @@ print("box:", boxes)
 print("probability", probs)
 print("landmarks", landmarks)
 
-
 # read training dataset
 TRAIN_PATH = "/opt/ml/input/data/train"
 df_label = pd.read_csv(os.path.join(TRAIN_PATH, "train.csv"))
@@ -260,10 +259,6 @@ for image_file_path in df['path']:
     # add row to the df_images with the extracted information
     df_image = df_image.append(
       {
-        "id":df['id'],
-        "gender":df['gender'],        
-        "age":df['age'],
-        "mask": df['mask'],
         "image_file_path": image_file_path,
         "xmin": xmin,
         "ymin": ymin,
