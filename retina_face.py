@@ -283,3 +283,83 @@ for image_file_path in df['path']:
       print(df_image.tail())
   
 df_image.head(10)
+
+
+
+df_image = df_image.rename(columns = {'image_file_path' : 'path'})
+df_image = df_image.rename(columns = {'id' : 'id_1'})
+df_image = df_image.rename(columns = {'age' : 'age_1'})
+df_image = df_image.rename(columns = {'gender' : 'gender_1'})
+df_image = df_image.rename(columns = {'mask' : 'mask_1'})
+
+df_retina = pd.merge(df, df_image, on=['path'])
+df_retina = df_retina.drop('id_1', axis=1)
+df_retina = df_retina.drop('age_1', axis=1)
+df_retina = df_retina.drop('gender_1', axis=1)
+df_retina = df_retina.drop('mask_1', axis=1)
+
+csv = pd.read_csv('/opt/ml/input/data/train/train.csv')
+
+profile = []
+for i in csv['path']:
+    for j in range(7):
+        profile.append(i)
+
+df_retina['profile'] = np.array(profile)
+df_retina.to_csv('/opt/ml/input/data/image-classification-level1-35/retina_dataset.csv', index=False)
+
+
+
+import pandas as pd 
+import numpy as np 
+import os
+import cv2
+
+# read training dataset
+train_info = '/opt/ml/input/data/image-classification-level1-35/retina_dataset.csv'
+df_train_info = pd.read_csv(train_info)
+df_train_info.head()
+
+
+
+from tqdm.notebook import tqdm
+import matplotlib.pyplot as plt 
+import cv2
+
+# make training folder
+TRAIN_IMGS_DATASET_PATH = '/opt/ml/input/data/train/images'
+CROPPED_TRAIN_IMGS_DATASET_PATH = '/opt/ml/input/data/train/cropped_images'
+
+if not os.path.exists(CROPPED_TRAIN_IMGS_DATASET_PATH):
+  os.mkdir(CROPPED_TRAIN_IMGS_DATASET_PATH)
+
+# iterrate rows for the given training dataset
+for index, row in tqdm(df_train_info.iterrows()):
+  # read stored data 
+  image_file_path = row["path"]
+  xmin = int(row["xmin"])
+  ymin = int(row["ymin"])
+  xmax = int(row["xmax"])
+  ymax = int(row["ymax"])
+  profile = str(row["profile"])
+
+  # make image profile folder
+  profile_name = profile
+  if not os.path.exists(os.path.join(CROPPED_TRAIN_IMGS_DATASET_PATH, profile_name)):
+    os.mkdir(os.path.join(CROPPED_TRAIN_IMGS_DATASET_PATH, profile_name))
+  
+  # place cropped image under profile folder
+  image_name =  image_file_path.split("/")[-1]
+  image = cv2.imread( image_file_path)
+  # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # omit BGR2RGB process: not using mtcnn
+
+  # prevent tile out of box error
+  if xmin<0:xmin=0
+  if ymin<0:ymin=0
+  if xmax>384:xmax=384
+  if ymax>512:ymax=512
+
+  # crop and save cropped images
+  cropped_img = image[ymin:ymax, xmin:xmax, :] # y axis, x axis, all 3 channels
+  # print(profile_name, image_name)
+  cv2.imwrite(os.path.join(CROPPED_TRAIN_IMGS_DATASET_PATH, profile_name, image_name), cropped_img)
