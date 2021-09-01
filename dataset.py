@@ -192,7 +192,6 @@ def make_fold(fold_num, df):
     folds = []
     df2 = df
     num_of_person = len(pd.unique(df['id']))
-    fold_size = int(num_of_person / fold_num)
     # ver1
     # for i in range(fold_num):
     #     v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, random_state=42, replace=False)
@@ -204,7 +203,8 @@ def make_fold(fold_num, df):
     # aug로 인한 균형 맞춰진것 영향 없애기
     df2 = df[(~df['path'].str.contains('aug'))]
     for i in range(fold_num):
-        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=0.2, random_state = 42)
+        fold_ratio = 540 / len(set(df2['id']))
+        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
     del df2

@@ -42,8 +42,9 @@ def read_config(paths):
     config.optimizer = values['training']['optimizer']
     config.scheduler = values['training']['scheduler']
     config.loss = values['training']['loss']
-    config.loss1_weight = float(values['training']['loss1_weight'])
-    config.loss2_weight = float(values['training']['loss2_weight'])
+    config.loss1_weight = float(values['training']['loss1_weight']) #crossentropy
+    config.loss2_weight = float(values['training']['loss2_weight']) #focal
+    config.loss3_weight = float(values['training']['loss3_weight']) #labelsmoothing
     config.model_name = values['training']['model_name']
     config.early_stopping = int(values['training']['early_stopping'])
     config.k_fold_num = int(values['training']['k_fold_num'])
