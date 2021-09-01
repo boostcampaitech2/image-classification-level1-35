@@ -65,7 +65,7 @@ class SHOPEEDenseNet(nn.Module):
         self.margin = ArcModule(in_features=self.channel_size, out_features = self.out_feature)
         self.bn1 = nn.BatchNorm2d(self.in_features)
         self.dropout = nn.Dropout2d(dropout, inplace=True)
-        self.fc1 = nn.Linear(self.in_features * 12 * 12 , self.channel_size)
+        self.fc1 = nn.Linear(self.in_features * 7 * 7 , self.channel_size)
         # self.fc1 = nn.Linear(self.in_features, self.channel_size)
 
         # self.fc1 = nn.Linear(self.in_features, self.out_feature)
@@ -221,5 +221,5 @@ def get_model(config):
     elif config.model_name == 'vit_base_patch16_384':
         model = VIT(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'SHOPEEDenseNet':
-        model = SHOPEEDenseNet(384, out_feature=config.num_classes).to(config.device)    
+        model = SHOPEEDenseNet(224, out_feature=config.num_classes).to(config.device)    
     return model

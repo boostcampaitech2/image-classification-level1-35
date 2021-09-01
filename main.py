@@ -45,6 +45,7 @@ if __name__ == "__main__":
     # trasform
     transform_train = Compose([
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224,224),
         HorizontalFlip(p=0.5),
         GaussianBlur(blur_limit=(3, 7), sigma_limit=0, always_apply=False, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -53,6 +54,7 @@ if __name__ == "__main__":
     ])
     transform_valid = Compose([
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224,224),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -137,7 +139,7 @@ if __name__ == "__main__":
             group_name = f'{config.model_name}_fold'
             name = f'{config.wandb_name}_{fold_index}'
 
-            run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
+            run = wandb.init(project=config.wandb_project_name, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
