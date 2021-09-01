@@ -245,13 +245,13 @@ def read_age_data():
 
     return pd.DataFrame(img_dict)
 
-# def get_label_added_data_for_age(age):
-#     if age < 30:
-#         return 0
-#     elif age < 60:
-#         return 1
-#     else:
-#         return 2
+def get_label_added_data_for_age(age):
+    if age < 30:
+        return 0
+    elif age < 60:
+        return 1
+    else:
+        return 2
 
 
 # 이미지 전체 경로 생성
