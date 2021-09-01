@@ -42,10 +42,11 @@ class TrainDataset(Dataset):
     # img_list = 훈련할 이미지 경로들
     # label_list = 위 이미지에 맞는 라벨들
     # transform = 전처리 정의
-    def __init__(self, img_list, label_list, transform):
+    def __init__(self, img_list, label_list, transform, config):
         self.X = img_list
         self.y = label_list
         self.transform = transform
+        self.config = config
     
     # 길이 반환
     def __len__(self):
@@ -59,7 +60,10 @@ class TrainDataset(Dataset):
         if self.transform:
             img = (self.transform(image=img))['image']
 
-        return img.float(), self.y[index]
+        if self.config.mode == 'Regression':
+            return img.float(), torch.tensor([self.y[index]]).float()
+        else:
+            return img.float(), self.y[index]
 
 class TestDataset(Dataset):
     def __init__(self, img_paths, transform):
@@ -76,73 +80,93 @@ class TestDataset(Dataset):
     def __len__(self):
         return len(self.img_paths)
 
-def new_train_dataset(train_path, img_path):
+def new_train_dataset(train_path, img_path, config):
 
     raw = pd.read_csv(train_path)
 
     #사람별 폴더의 파일 7개 경로 가져오기
     path = []
-    route = []
-    
-    for v in raw['path']:
-        path.append(os.listdir(img_path + '/' + v))
-
-
-    #새로운 데이터셋을 위한 mask, path(사진별 파일)의 feature생성하기
-    mask = []
-    pic_path = []
-
-    for i_d in path:
-        for pic in i_d:
-            if 'aug' in pic:
+    new_dict = {
+        'id':[],
+        'age' : [],
+        'gender' :[],
+        'mask' :[],
+        'path' :[]
+    }
+    for raw_idx, v in enumerate(raw['path']):
+        person_path = img_path + '/' + v
+        number, gender, race, age = v.split('_')
+        for imgp in os.listdir(person_path):
+            if not config.load_augmentation and 'aug' in imgp:
                 continue
-            if pic[0] == 'm':
-                mask.append('wear')
-                pic_path.append(pic)
-            elif pic[0] == 'i':
-                mask.append('incorrect')
-                pic_path.append(pic)
-            elif pic[0] == 'n':
-                mask.append('not wear')
-                pic_path.append(pic)
+            if imgp[0] == 'm':
+                new_dict['id'].append(raw['id'].iloc[raw_idx])
+                new_dict['mask'].append('wear')
+                new_dict['gender'].append(gender)
+                new_dict['age'].append(float(age))
+                new_dict['path'].append(os.path.join(person_path, imgp))
+            elif imgp[0] == 'i':
+                new_dict['id'].append(raw['id'].iloc[raw_idx])
+                new_dict['mask'].append('incorrect')
+                new_dict['gender'].append(gender)
+                new_dict['age'].append(float(age))
+                new_dict['path'].append(os.path.join(person_path, imgp))
+            elif imgp[0] == 'n':
+                new_dict['id'].append(raw['id'].iloc[raw_idx])
+                new_dict['mask'].append('not wear')
+                new_dict['gender'].append(gender)
+                new_dict['age'].append(float(age))
+                new_dict['path'].append(os.path.join(person_path, imgp))
             else:
                 pass
 
+    # #새로운 데이터셋을 위한 mask, path(사진별 파일)의 feature생성하기
+    # mask = []
+    # pic_path = []
 
-    #기존의 데이터셋에 있는 id, age, gender, path(사람별 폴더) 개수 맞추기
-    person_path = []
-    for i in raw['path']:
-        for j in range(7):
-            person_path.append(i)
-
-    id = []
-    for i in raw['id']:
-        for j in range(7):
-            id.append(i)
+    # for i_d in path:
+    #     for pic in i_d:
+    #         print(i_d, pic)
+    #         exit(1)
+    #         # if 'aug' in pic:
+    #         #     continue
+            
 
 
-    gender = []
-    for i in raw['gender']:
-        for j in range(7):
-            gender.append(i)
+    # #기존의 데이터셋에 있는 id, age, gender, path(사람별 폴더) 개수 맞추기
+    # person_path = []
+    # for i in raw['path']:
+    #     for j in range(7):
+    #         person_path.append(i)
 
-    age = []
-    for i in raw['age']:
-        for j in range(7):
-            age.append(i)
+    # id = []
+    # for i in raw['id']:
+    #     for j in range(7):
+    #         id.append(i)
 
-    #사람별 + 사진별 경로 합쳐서 최종 path 생성하기
-    final_path = []
-    for i in range(18900):
-        final_path.append(os.path.join(img_path ,person_path[i] + '/' + pic_path[i])) 
 
-    #새로운 데이터셋 생성하기
-    df = pd.DataFrame({'id': id, 
-                    'gender': gender, 
-                    'age': age, 
-                    'mask': mask, 
-                    'path': final_path})
+    # gender = []
+    # for i in raw['gender']:
+    #     for j in range(7):
+    #         gender.append(i)
 
+    # age = []
+    # for i in raw['age']:
+    #     for j in range(7):
+    #         age.append(i)
+
+    # #사람별 + 사진별 경로 합쳐서 최종 path 생성하기
+    # final_path = []
+    # for i in range(18900):
+    #     final_path.append(os.path.join(img_path ,person_path[i] + '/' + pic_path[i])) 
+
+    # #새로운 데이터셋 생성하기
+    # df = pd.DataFrame({'id': id, 
+    #                 'gender': gender, 
+    #                 'age': age, 
+    #                 'mask': mask, 
+    #                 'path': final_path})
+    df = pd.DataFrame(new_dict)
     return df
 
 def get_label(df, model_type):
@@ -188,23 +212,26 @@ def get_label(df, model_type):
     return df
 
 def make_train_list(df, config, valid_ids):
+    target = 'class'
+    if config.prediction_type == 'Age' and config.mode == 'Regression' :
+        target = 'age'
     if config.prediction_type  in ['Age', 'Gender']:
         if config.learning_type == 'None':
-            train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
-            valid_list, valid_label = df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['class']
+            train_list, train_label = df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')]['path'], df[(~df['id'].isin(valid_ids)) & (df['mask']=='not wear')][target]
+            valid_list, valid_label = df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear') & (~df['path'].str.contains('aug'))]['path'], df[(df['id'].isin(valid_ids)) & (df['mask']=='not wear') & (~df['path'].str.contains('aug'))][target]
         elif config.learning_type == 'Mask':
-            train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['class']
-            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+            train_list, train_label = df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))]['path'], df[(~df['id'].isin(valid_ids)) & ((df['mask']=='wear') | (df['mask']=='incorrect'))][target]
+            valid_list, valid_label = df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
         elif config.learning_type == 'All':
-            train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
-            valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+            train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))][target]
+            valid_list, valid_label = df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
         else:
             print("Wrong learning type!!")
             exit(1)
     else:
-        train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
-        valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
-
+        train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))][target]
+        valid_list, valid_label = df[df['id'].isin(valid_ids) & (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
+    
     return train_list, train_label, valid_list, valid_label
 
 def make_fold(fold_num, df):
@@ -220,6 +247,8 @@ def make_fold(fold_num, df):
     # del df2
     
     # ver2
+    # aug로 인한 균형 맞춰진것 영향 없애기
+    df2 = df[(~df['path'].str.contains('aug'))]
     for i in range(fold_num):
         train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=0.2, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]

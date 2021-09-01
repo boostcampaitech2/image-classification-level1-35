@@ -1,5 +1,6 @@
 import os
 import sys, getopt
+
 from dataset import *
 from Loss import *
 from train import *
@@ -41,12 +42,14 @@ if __name__ == "__main__":
     config_file_name = CONFIG_PATH.split('/')[1].split('.')[0]
     config = read_config(CONFIG_PATH)
     config.config_file_name = config_file_name
-  
+    config.mode = 'Classification' #'Regression'
     # trasform
     transform_train = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
         HorizontalFlip(p=0.5),
+        GaussNoise(var_limit=(1000, 1300), p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
+        Cutout(num_holes=np.random.randint(30,50,1)[0], max_h_size=10, max_w_size=10 ,p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -67,11 +70,11 @@ if __name__ == "__main__":
     # 데이터 불러오기
     print("Data Loading...")
     # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
-    df = new_train_dataset(config.train_csv_path, config.train_images_path)
+    df = new_train_dataset(config.train_csv_path, config.train_images_path, config)
     df = get_label(df, config.prediction_type)
 
-    if config.prediction_type == 'Age':
-        age_df = read_age_data()
+    # if config.prediction_type == 'Age':
+    #     age_df = read_age_data()
 
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
@@ -105,17 +108,17 @@ if __name__ == "__main__":
         valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, random_state=42, replace=False)
         train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
         
-        if config.prediction_type == 'Age':
-            train_list = pd.concat([train_list, age_df['path']], axis=0)
-            train_label = pd.concat([train_label, age_df['class']], axis=0)
+        # if config.prediction_type == 'Age':
+        #     train_list = pd.concat([train_list, age_df['path']], axis=0)
+        #     train_label = pd.concat([train_label, age_df['class']], axis=0)
 
         class_weigth = get_class_weights(train_label)
 
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-        train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
+        train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train, config)
         
         # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-        valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid)
+        valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid, config)
     
         # DataLoader에 넣어주기
         train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
@@ -140,19 +143,19 @@ if __name__ == "__main__":
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
-            if config.prediction_type == 'Age':
-                train_list = pd.concat([train_list, age_df['path']], axis=0)
-                train_label = pd.concat([train_label, age_df['class']], axis=0)
+            # if config.prediction_type == 'Age':
+            #     train_list = pd.concat([train_list, age_df['path']], axis=0)
+            #     train_label = pd.concat([train_label, age_df['class']], axis=0)
   
             print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
 
             class_weigth = get_class_weights(train_label)
 
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
-            train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
+            train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train, config)
             
             # dataset.py에서 구현한 dataset class로 평가 데이터 정의
-            valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid)
+            valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid, config)
             
             # DataLoader에 넣어주기
             train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)

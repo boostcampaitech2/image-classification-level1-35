@@ -73,9 +73,9 @@ class MobilenetV3(nn.Module):
         super().__init__()
         self.pretrained = timm.create_model('mobilenetv2_100', pretrained=True)
         self.pretrained.classifier = nn.Sequential(
-            nn.Linear(1280, 512, bias=True),
-            nn.LeakyReLU(0.3),
-            nn.Linear(512, num_classes, bias=True),
+            nn.Linear(1280, num_classes, bias=True),
+            # nn.LeakyReLU(0.3),
+            # nn.Linear(512, num_classes, bias=True),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from torch.nn.modules.loss import MSELoss
+import torch.functional as F
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=1, gamma=2, logits=False, reduce=True):
@@ -59,5 +61,7 @@ def get_loss(config, class_weigth):
         loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
     elif config.loss == 'Foscal':
         loss_func1 = FocalLoss()
+    elif config.loss == 'MSE':
+        loss_func1 = MSELoss()
         
     return loss_func1
