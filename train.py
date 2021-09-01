@@ -147,7 +147,7 @@ def vlidation_per_epoch(valid_loader, model, loss_func, config):
                 if te_idx % 10 == 0:
                     pred_label = torch.argmax(pred.cpu().data, dim=1)
                     real_label = y.cpu().data
-                    for img_idx in range(config.batch_size):
+                    for img_idx in range(len(y)):
                         if pred_label[img_idx] != real_label[img_idx]:
                             examples.append(wandb.Image(X[img_idx], caption=f'Pred: {torch.argmax(pred.cpu().data, dim=1)[img_idx]}, Real: {y.cpu().data[img_idx]}'))
         

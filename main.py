@@ -47,6 +47,7 @@ if __name__ == "__main__":
         # Resize(width = 384, height = 384),
         # RandomCrop(always_apply=True, height=384, width=384, p=1.0),
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(width = 244, height = 244),
         HorizontalFlip(p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),

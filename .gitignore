@@ -2,4 +2,4 @@ wandb/
 configs/
 *.log
 *.out
-nohup.ou
+nohup.out
