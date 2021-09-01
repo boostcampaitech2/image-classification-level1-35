@@ -45,13 +45,16 @@ if __name__ == "__main__":
     # trasform
     transform_train = Compose([
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224,224),
         HorizontalFlip(p=0.5),
+        GaussianBlur(blur_limit=(3, 7), sigma_limit=0, always_apply=False, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224,224),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -68,6 +71,8 @@ if __name__ == "__main__":
     print("Data Loading...")
     # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
     df = new_train_dataset(config.train_csv_path, config.train_images_path)
+    df2 = new_train_dataset_2("../input/data_add/2/Train/train_add_2.csv")
+    df = pd.concat([df,df2])
     df = get_label(df, config.prediction_type)
 
     if config.prediction_type == 'Age':
