@@ -75,6 +75,5 @@ def get_loss(config, class_weigth):
         loss_func1 = FocalLoss()
     elif config.loss == 'Crossentropy_focal_labelsmoothing':
         loss_func1 = CrossEntropy_FoscalLoss_LabelSmoothingLoss(class_weigth, config)
-
         
     return loss_func1

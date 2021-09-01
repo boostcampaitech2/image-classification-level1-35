@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 import wandb
 import torch.cuda
+from torch.cuda.amp import autocast, GradScaler
 
 def train(train_loader, valid_loader, class_weigth, fold_index, config):
     # 모델 생성
@@ -85,6 +86,7 @@ def train(train_loader, valid_loader, class_weigth, fold_index, config):
 
 # 1 epoch에 대한 훈련 코드
 def train_per_epoch(train_loader, model, loss_func, optimizer, config):
+    scaler = GradScaler()
     model.train()
     batch_loss = 0
     batch_f1_pred = []
@@ -96,10 +98,17 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         y = y.to(config.device)
         optimizer.zero_grad()
 
-        pred = model.forward(x)
+        # pred = model.forward(x)
+        # with autocast():
+        #     pred = model.forward(x, y)
+        #     loss = loss_func(pred, y)
+        pred = model.forward(x, y)
         loss = loss_func(pred, y)
+        # scaler.scale(loss).backward()
         loss.backward()
         optimizer.step()
+        # scaler.step(optimizer)
+        # scaler.update()
 
         batch_loss += loss.cpu().data
         batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
@@ -123,7 +132,7 @@ def vlidation_per_epoch(valid_loader, model, loss_func, config):
             y = y.to(config.device)
 
             with torch.set_grad_enabled(False):
-                pred = model(X)
+                pred = model(X, y)
                 loss = loss_func(pred, y)
                 running_acc += accuracy_score(torch.argmax(pred.cpu().data, dim=1), y.cpu().data)
                 running_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
@@ -132,7 +141,7 @@ def vlidation_per_epoch(valid_loader, model, loss_func, config):
                 if te_idx % 10 == 0:
                     pred_label = torch.argmax(pred.cpu().data, dim=1)
                     real_label = y.cpu().data
-                    for img_idx in range(config.batch_size):
+                    for img_idx in range(len(y)):
                         if pred_label[img_idx] != real_label[img_idx]:
                             examples.append(wandb.Image(X[img_idx], caption=f'Pred: {torch.argmax(pred.cpu().data, dim=1)[img_idx]}, Real: {y.cpu().data[img_idx]}'))
         

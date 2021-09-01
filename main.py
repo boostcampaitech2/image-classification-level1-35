@@ -75,8 +75,8 @@ if __name__ == "__main__":
     df = pd.concat([df,df2])
     df = get_label(df, config.prediction_type)
 
-    if config.prediction_type == 'Age':
-        age_df = read_age_data()
+    # if config.prediction_type == 'Age':
+    #     age_df = read_age_data()
 
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
