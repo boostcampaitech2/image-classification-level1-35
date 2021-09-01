@@ -10,6 +10,10 @@ from albumentations import *
 import matplotlib.pyplot as plt
 from pandas_streaming.df import train_test_apart_stratify
 
+new_train = pd.read_csv('/opt/ml/input/data/new_image/new_train.csv')
+new_train_cutmix = pd.read_csv('/opt/ml/input/data/new_image/new_train_cutmix.csv')
+
+
 # Data augmentation을 위한 클래스
 class Preprocessing():
     def __init__(self, pathes, labels, targets, aug_num):
@@ -201,9 +205,16 @@ def make_train_list(df, config, valid_ids):
         else:
             print("Wrong learning type!!")
             exit(1)
+
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))]['class']
         valid_list, valid_label = df[df['id'].isin(valid_ids)]['path'], df[df['id'].isin(valid_ids)]['class']
+
+    train_list = pd.concat([train_list,new_train.path])
+    train_label = pd.concat([train_label,new_train.gender])
+    train_list = pd.concat([train_list,new_train_cutmix.path])
+    train_label = pd.concat([train_label,new_train_cutmix.gender])
+
 
     return train_list, train_label, valid_list, valid_label
 
