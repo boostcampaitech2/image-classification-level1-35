@@ -227,23 +227,23 @@ def make_fold(fold_num, df):
 
     return folds
 
-# def read_age_data():
-#     path = '../../input/data/train/Age/'
-#     img_dict = {'id':[], 'age':[], 'path':[], 'class':[]}
-#     for img_path in os.listdir(path):
-#         if img_path == '.ipynb_checkpoints':
-#             continue
-#         try:
-#             age, id = img_path.split('(')
-#         except:
-#             print(img_path)
-#             exit(1)
-#         img_dict['id'].append(id[:-5])
-#         img_dict['age'].append(int(age))
-#         img_dict['path'].append(os.path.join(path, img_path))
-#         img_dict['class'].append(get_label_added_data_for_age(int(age)))
+def read_age_data():
+    path = '../../input/data/train/Age/'
+    img_dict = {'id':[], 'age':[], 'path':[], 'class':[]}
+    for img_path in os.listdir(path):
+        if img_path == '.ipynb_checkpoints':
+            continue
+        try:
+            age, id = img_path.split('(')
+        except:
+            print(img_path)
+            exit(1)
+        img_dict['id'].append(id[:-5])
+        img_dict['age'].append(int(age))
+        img_dict['path'].append(os.path.join(path, img_path))
+        img_dict['class'].append(get_label_added_data_for_age(int(age)))
 
-#     return pd.DataFrame(img_dict)
+    return pd.DataFrame(img_dict)
 
 # def get_label_added_data_for_age(age):
 #     if age < 30:
