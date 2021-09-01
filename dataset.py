@@ -120,52 +120,6 @@ def new_train_dataset(train_path, img_path, config):
             else:
                 pass
 
-    # #새로운 데이터셋을 위한 mask, path(사진별 파일)의 feature생성하기
-    # mask = []
-    # pic_path = []
-
-    # for i_d in path:
-    #     for pic in i_d:
-    #         print(i_d, pic)
-    #         exit(1)
-    #         # if 'aug' in pic:
-    #         #     continue
-            
-
-
-    # #기존의 데이터셋에 있는 id, age, gender, path(사람별 폴더) 개수 맞추기
-    # person_path = []
-    # for i in raw['path']:
-    #     for j in range(7):
-    #         person_path.append(i)
-
-    # id = []
-    # for i in raw['id']:
-    #     for j in range(7):
-    #         id.append(i)
-
-
-    # gender = []
-    # for i in raw['gender']:
-    #     for j in range(7):
-    #         gender.append(i)
-
-    # age = []
-    # for i in raw['age']:
-    #     for j in range(7):
-    #         age.append(i)
-
-    # #사람별 + 사진별 경로 합쳐서 최종 path 생성하기
-    # final_path = []
-    # for i in range(18900):
-    #     final_path.append(os.path.join(img_path ,person_path[i] + '/' + pic_path[i])) 
-
-    # #새로운 데이터셋 생성하기
-    # df = pd.DataFrame({'id': id, 
-    #                 'gender': gender, 
-    #                 'age': age, 
-    #                 'mask': mask, 
-    #                 'path': final_path})
     df = pd.DataFrame(new_dict)
     return df
 
