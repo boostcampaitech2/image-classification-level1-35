@@ -232,9 +232,10 @@ def make_fold(fold_num, df):
     
     # ver2
     for i in range(fold_num):
-        #fold_ratio = 540 / len(set(df2['id']))
-        fold_ratio = np.around(540 / len(set(df2['id'])),1)
-        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=round(fold_ratio,2), random_state = 42)
+        fold_ratio = 540 / len(set(df2['id']))
+        #fold_ratio = np.around(540 / len(set(df2['id'])),1)
+        print(fold_ratio)
+        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
     del df2

@@ -56,11 +56,12 @@ class CrossEntropy_FoscalLoss_LabelSmoothingLoss(nn.Module):
         self.weight3 = config.loss3_weight
         self.device = config.device
         self.class_weights = class_weights
+        self.config = config
 
     def forward(self, inputs, targets):
         ce_loss = nn.CrossEntropyLoss(weight=torch.tensor(self.class_weights).to(self.device, dtype=torch.float))(inputs, targets)
         fs_loss = FocalLoss()(inputs, targets)
-        ls_loss = LabelSmoothingLoss()(inputs, targets)
+        ls_loss = LabelSmoothingLoss(self.config)(inputs, targets)
         return ce_loss * self.weight1 + fs_loss * self.weight2 + ls_loss * self.weight3
 
 def get_loss(config, class_weigth):
@@ -72,5 +73,8 @@ def get_loss(config, class_weigth):
         loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
     elif config.loss == 'Foscal':
         loss_func1 = FocalLoss()
+    elif config.loss == 'Crossentropy_focal_labelsmoothing':
+        loss_func1 = CrossEntropy_FoscalLoss_LabelSmoothingLoss(class_weigth, config)
+
         
     return loss_func1

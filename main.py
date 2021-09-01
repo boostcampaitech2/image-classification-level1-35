@@ -71,7 +71,7 @@ if __name__ == "__main__":
     print("Data Loading...")
     # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
     df = new_train_dataset(config.train_csv_path, config.train_images_path)
-    df2 = new_train_dataset_2("../input/data_add/2/Train/train_add_2.csv")
+    df2 = new_train_dataset_2("../input/data_add/1/Train/train_add_1.csv")
     df = pd.concat([df,df2])
     df = get_label(df, config.prediction_type)
 
