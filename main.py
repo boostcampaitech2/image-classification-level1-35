@@ -1,157 +1,164 @@
+import os
+import sys, getopt
+from dataset import *
+from Loss import *
+from train import *
+from utill import *
+
+from albumentations import *
+from albumentations.pytorch import ToTensorV2
+
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Subset
-import func
-import dataset
-import model
+from torch.utils.data import DataLoader
 
-
-train_path = '/opt/ml/input/data/train/train.csv'
-img_path = '/opt/ml/input/data/train/images'
-
-#mask와 picture path가 포함된 새로운 데이터셋 
-df = new_train_dataset(train_path, img_path)
-
-#labeling
-df = get_label(df)
-
-#Dataset 생성하기
-mask_dataset = MaskDataset(df, transform = transforms.Compose([
-        transforms.Resize((350, 350), Image.BILINEAR),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.2, 0.2, 0.2)),
-        transforms.RandomResizedCrop(224),
-        transforms.Grayscale(num_output_channels=3) > 감마조절
-        ]))
-
-#train/val data split
-batch_size  = 16 #mixed precision(동일한 배치사이즈>메모리 적게차지)(wandb 및 ray)
-random_seed = 4
-random.seed(random_seed)
-torch.manual_seed(random_seed)
-
-
-train_idx, val_idx = train_test_split(mask_dataset[0], mask_dataset[1], test_size=0.2, random_state=random_seed)
-datasets = {}
-datasets['train'] = Subset(mask_dataset, train_idx)
-datasets['valid'] = Subset(mask_dataset, val_idx)
-
-
-#dataloader 생성하기
-dataloaders, batch_num = {}, {}
-dataloaders['train'] = torch.utils.data.DataLoader(datasets['train'],
-                                              batch_size=batch_size, shuffle=True,
-                                              num_workers=4)
-dataloaders['valid'] = torch.utils.data.DataLoader(datasets['valid'],
-                                              batch_size=batch_size, shuffle=False,
-                                              num_workers=4)
-batch_num['train'], batch_num['valid'] = len(dataloaders['train']), len(dataloaders['valid'])
-
-
-
-
-
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
-model = model.to(device)
-
-
-# criterion = nn.CrossEntropyLoss()
-criterion = FocalLoss()
-
-
-optimizer_ft = optim.SGD(model.parameters(), lr = 0.005, momentum=0.9, weight_decay=1e-4)
-# optimizer_ft = torch.optim.Adam(model.parameters(), lr=0.05)
-# optimizer_ft =torch.optim.AdamW(model.parameters(), lr=0.01, weight_decay=1e-4)
-
-lmbda = lambda epoch: 0.98739
-exp_lr_scheduler = optim.lr_scheduler.MultiplicativeLR(optimizer_ft, lr_lambda=lmbda)
-# exp_lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer_ft, T_max=50, eta_min=0)
-
-model, best_idx, best_acc, train_loss, train_acc, valid_loss, valid_acc = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=10)
-
-
-def train_model(pretrained_model, criterion, optimizer, scheduler, num_epochs=20):
-    since = time.time()
-
-    best_model_wts = copy.deepcopy(model.state_dict())
-    # best_model_wts = model.state_dict().clone().detach().requires_grad_(True)
-    best_acc = 0.0
-    train_loss, train_acc, valid_loss, valid_acc = [], [], [], []
+if __name__ == "__main__":
+    argv = sys.argv
+    FILE_NAME = argv[0] # 실행시키는 파일명
+    CONFIG_PATH = ""   # config file 경로
     
-    n_iter=0
-    epoch_f1 = 0
+    try:
+        # 파일명 이후 부터 입력 받는 옵션
+        # help, config_path
+        opts, etc_args = getopt.getopt(argv[1:], "hc:", ["help", "config_path="])
+    except getopt.GetoptError:
+        # 잘못된 옵션을 입력하는 경우
+        print(FILE_NAME, "-c <config_path>")
+        sys.exit(2)
+        
+    # 입력된 옵션을 적절히 변수로 입력
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print(FILE_NAME, "-c <config_path>")
+            sys.exit(0)
+        elif opt in ("-c", "--config_path"):
+            CONFIG_PATH = arg
     
-    for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-        print('-' * 10)
+    # 입력이 필수적인 옵션
+    if len(CONFIG_PATH) < 1:
+        print(FILE_NAME, "-c <config_path> is madatory")
+        sys.exit(2)
+        
+    config_file_name = CONFIG_PATH.split('/')[1].split('.')[0]
+    config = read_config(CONFIG_PATH)
+    config.config_file_name = config_file_name
+  
+    # trasform
+    transform_train = Compose([
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        HorizontalFlip(p=0.5),
+        GaussianBlur(blur_limit=(3, 7), sigma_limit=0, always_apply=False, p=0.5),
+        RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+    ])
+    transform_valid = Compose([
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+    ])
 
-        # 에폭마다 train/valid
-        for phase in ['train', 'valid']:
-            if phase == 'train':
-                model.train() 
-            else:
-                model.eval() 
+    # 결과 및 모델 저장할 폴더
+    create_dir([f'{config.result_save_path}results/{config.save_name}', f'{config.model_save_path}models/{config.save_name}'])
+    
+    config.device = 'cuda' if  torch.cuda.is_available() else 'cpu'
+    print("-"*10, "Device info", "-"*10)
+    print(config.device)
+    print("-"*10, "-----------", "-"*10)
 
-            running_loss, running_corrects, num_cnt = 0.0, 0, 0
+    # 데이터 불러오기
+    print("Data Loading...")
+    # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
+    df = new_train_dataset(config.train_csv_path, config.train_images_path)
+    df = get_label(df, config.prediction_type)
+
+    if config.prediction_type == 'Age':
+        age_df = read_age_data()
+
+    if config.k_fold_num != -1:
+        folds = make_fold(config.k_fold_num, df)
+
+    #print(np.array(folds).shape)
+
+    # augmentation == True 이면 
+    # 정해신 target class에 대한 이미지만 augmentation
+    # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
+    # if config.augmentation:
+    #     print("-"*10,"Start Augmentation", "-"*10)
+    #     print("Target: ", config.aug_targets)
+    #     preprocess = Preprocessing(img_list, y_list, config.aug_targets, config.aug_num)
+    #     preprocess.augmentation()
+    #     # augmentation된 이미지까지 추가된 path, label 받아오기
+    #     img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
+    #     print("-"*10,"End Augmentation", "-"*10)    
+    
+    # unbalanced 클래스에 가중치를 주기 위한 것
+    # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
+    
+    # Cross validation 안할때
+    if config.k_fold_num == -1:
+        group_name = f'{config.model_name}'
+        name = f'{config.model_name}_{config_file_name}'
+        wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=config.wandb_name, config=config, settings=wandb.Settings(start_method="fork"))
+        # train, valid 데이터 분리
+        # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
+        # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
+    
+        valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, random_state=42, replace=False)
+        train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
+        
+        if config.prediction_type == 'Age':
+            train_list = pd.concat([train_list, age_df['path']], axis=0)
+            train_label = pd.concat([train_label, age_df['class']], axis=0)
+
+        class_weigth = get_class_weights(train_label)
+
+        # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
+        train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
+        
+        # dataset.py에서 구현한 dataset class로 평가 데이터 정의
+        valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid)
+    
+        # DataLoader에 넣어주기
+        train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
+        valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
+        print(f'Train_data: {len(train_dataset)}, Valid_data:{len(valid_dataset)}')
+        print("Data Loading... Success!!")
+        
+        print("Train Start!!")
+        best_model = train(train_loader, valid_loader, class_weigth, -1, config)
+
+    # Cross validation 할때
+    else:       
+        print(f'{config.k_fold_num} cross validation strat...')
+        
+        # kf가 랜덤으로 섞어서 추출해 index들을 반환
+        for fold_index, valid_ids in enumerate(folds):
+            print(f'{fold_index} fold start -')
+            group_name = f'{config.model_name}_fold'
+            name = f'{config.wandb_name}_{fold_index}'
+
+            run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
-            # Iterate
-            for inputs, labels in dataloaders[phase]:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-
-                # parameter 초기화
-                optimizer.zero_grad()
-
-                # forward
-                with torch.set_grad_enabled(phase == 'train'):
-                    outputs = model(inputs)
-                    _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
-
-                    # backward, weight update
-                    if phase == 'train':
-                        loss.backward()
-                        optimizer.step()
-
-   
-                running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
-                num_cnt += len(labels)
-            if phase == 'train':
-                scheduler.step()
+            train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
-            epoch_loss = float(running_loss / num_cnt)
-            epoch_acc  = float((running_corrects.double() / num_cnt).cpu()*100)
+            if config.prediction_type == 'Age':
+                train_list = pd.concat([train_list, age_df['path']], axis=0)
+                train_label = pd.concat([train_label, age_df['class']], axis=0)
+  
+            print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
+
+            class_weigth = get_class_weights(train_label)
+
+            # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
+            train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train)
             
-            if phase == 'train':
-                train_loss.append(epoch_loss)
-                train_acc.append(epoch_acc)
-            else:
-                valid_loss.append(epoch_loss)
-                valid_acc.append(epoch_acc)
-            print('{} Loss: {:.2f} Acc: {:.1f}'.format(phase, epoch_loss, epoch_acc))
+            # dataset.py에서 구현한 dataset class로 평가 데이터 정의
+            valid_dataset = TrainDataset(np.array(valid_list), np.array(valid_label), transform_valid)
             
-            epoch_f1 += f1_score(labels.cpu().numpy(), preds.cpu().numpy(), average='macro')
-            n_iter += 1
-	
-
-            if phase == 'valid' and epoch_acc > best_acc:
-                best_idx = epoch
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
-                print('==> best model saved - %d / %.1f'%(best_idx, best_acc))
-
-        epoch_f1 = epoch_f1/n_iter
-        print(f"{epoch_f1:.4f}")
-
-    time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-    print('Best valid Acc: %d - %.1f' %(best_idx, best_acc))
-
-    # load best model weights
-    model.load_state_dict(best_model_wts)
-    # torch.save(model.state_dict(), 'mask_model.pt') #모델 파라미터 저장
-    torch.save(model, 'mask_model.pt') #모델 자체 저장
-    print('model saved')
-    return model, best_idx, best_acc, train_loss, train_acc, valid_loss, valid_acc
+            # DataLoader에 넣어주기
+            train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
+            valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
+            
+            print("Train Start!!")
+            best_model = train(train_loader, valid_loader, class_weigth, fold_index, config)
+            run.finish()
