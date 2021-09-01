@@ -13,8 +13,11 @@ from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 import wandb
 import torch.cuda
+from torch.utils.data import DataLoader
+from albumentations import *
+from albumentations.pytorch import ToTensorV2
 
-def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_dataloader):
+def train(train_loader, valid_loader, class_weight, fold_index, config):
     # 모델 생성
     print("Model Generation...")
     model = get_model(config)
@@ -29,7 +32,7 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
     scheduler = get_scheduler(optimizer, config)
     
     best_metric = 0
-    best_model_dict = None
+    best_model = None
     early_stopping_count = 0
     result = {
         'epoch':[],
@@ -42,8 +45,12 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
     print("-"*10, "Training", "-"*10)
 
     for e in range(1, config.epoches + 1):
-        #batch_loss, batch_f1 = train_per_epoch(train_loader, model, loss_func, optimizer, config)
-        batch_loss, batch_f1 = train_per_epoch_with_pseudo_labeling(e, train_loader, pesudo_dataloader, model, loss_func, optimizer, config)
+        pesudo_image_path = unlabeled_dataset()
+    
+        if e == 1:
+            batch_loss, batch_f1 = train_per_epoch(train_loader, model, loss_func, optimizer, config)
+        else:
+            batch_loss, batch_f1 = train_per_epoch_with_pseudo_labeling(e, train_loader, model, best_model, loss_func, optimizer, config, pesudo_image_path)
         running_loss, running_acc, running_f1, examples = vlidation_per_epoch(valid_loader, model, loss_func, config)
         
         # dic로 출력
@@ -68,7 +75,7 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
             else:
                 torch.save(model, f'{config.model_save_path}models/{config.save_name}/fold_{fold_index}_{config.save_name}_best.pt')
             best_metric = running_f1
-            best_model_dict = model.state_dict()
+            best_model = model
             print("-"*10, "Saved!!", "-"*10)
         else:
             early_stopping_count += 1
@@ -83,7 +90,6 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
             print("-"*10, "Early Stop!!!!", "-"*10)
             break
         
-    return best_model_dict
 
 # 1 epoch에 대한 훈련 코드
 def train_per_epoch(train_loader, model, loss_func, optimizer, config):
@@ -99,12 +105,8 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         y = y.to(config.device)
         optimizer.zero_grad()
         with autocast():
-            if config.model_name == SHOPEEDenseNet:
-                pred = model(x, y)
-                loss = loss_func(pred, y)
-            else:
-                pred = model(x)
-                loss = loss_func(pred, y)
+            pred = model(x)
+            loss = loss_func(pred, y)
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -122,7 +124,25 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
     return batch_loss, batch_f1
 
 # 1 epoch에 대한 훈련 코드
-def train_per_epoch_with_pseudo_labeling(epoch, train_loader, pesudo_train_loader, model, loss_func, optimizer, config):
+def train_per_epoch_with_pseudo_labeling(epoch, train_loader, model, best_model,loss_func, optimizer, config, pesudo_image_path):
+    transform_train = Compose([
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224, 224, always_apply=True, p=1.0),
+        HorizontalFlip(p=0.5),
+        GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
+        RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
+        Cutout(num_holes=np.random.randint(30,50,1)[0], max_h_size=10, max_w_size=10 ,p=0.5),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+    ])
+    transform_valid = Compose([
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224, 224, always_apply=True, p=1.0),
+        Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
+        ToTensorV2(p=1.0),
+    ])
+
+
     scaler = GradScaler()
     model.train()
     batch_loss = 0
@@ -131,44 +151,19 @@ def train_per_epoch_with_pseudo_labeling(epoch, train_loader, pesudo_train_loade
     # train
     torch.cuda.empty_cache() 
     tr_idx = 0
-    for (X, y), pesudo_X in tqdm(zip(train_loader, pesudo_train_loader), total=len(train_loader)):
+    for (X, y) in tqdm(train_loader):
         x = X.to(config.device)
-        
         y = y.to(config.device)
         optimizer.zero_grad()
         with autocast():
-            if epoch == 1:
-                if config.model_name == SHOPEEDenseNet:
-                    pred = model(x, y)
-                    loss = loss_func(pred, y)
-                else:
-                    pred = model(x)
-                    loss = loss_func(pred, y)
-            
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                pesudo_x = pesudo_X.to(config.device)
-                if config.model_name == SHOPEEDenseNet:
-                    pred = model(x, y)
-                    basic_loss = loss_func(pred, y)
-        
-                    pseudo_pred = model(pesudo_x, y)
-                    pseudo_loss = loss_func(pseudo_pred, pred)
-                else:
-                    pred = model(x)
-                    basic_loss = loss_func(pred, y)
+            pred = model(x)
+            basic_loss = loss_func(pred, y)
+            scaler.scale(basic_loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
                 
-                    pseudo_pred = model(pesudo_x)
-                    pseudo_loss = loss_func(pseudo_pred, pred)
+        batch_loss += basic_loss.cpu().data
 
-                loss = basic_loss + pseudo_loss * 0.5
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-
-        batch_loss += loss.cpu().data
         if config.mode == 'Regression':
             batch_f1_pred.extend(pred[0].cpu().data)
             batch_f1_target.extend(y.cpu().data)
@@ -177,6 +172,32 @@ def train_per_epoch_with_pseudo_labeling(epoch, train_loader, pesudo_train_loade
             batch_f1_target.extend(y.cpu().data)
 
         tr_idx += 1
+    
+    pesudo_dataset = TestDataset(pesudo_image_path, transform=transform_valid)
+    pesudo_dataloader = DataLoader(pesudo_dataset, batch_size=32, num_workers=3, shuffle=False)
+    pesudo_labels = []
+    with torch.no_grad():
+        for pesudo_X in tqdm(pesudo_dataloader):
+            pesudo_x = pesudo_X.to(config.device)
+            pred = best_model.forward(pesudo_x)
+            pred = pred.argmax(dim=-1)
+            pesudo_labels.extend(pred.cpu().numpy())
+
+    pesudo_dataset = TrainDataset(pesudo_image_path,  pesudo_labels, transform_train, config)
+    pesudo_dataloader = DataLoader(pesudo_dataset, batch_size=32, num_workers=3, shuffle=False)
+
+
+    for pesudo_X, y in tqdm(pesudo_dataloader):
+        pesudo_x = pesudo_X.to(config.device)
+        y = y.to(config.device)
+        pseudo_pred = model(pesudo_x)
+        pseudo_loss = loss_func(pseudo_pred, y)
+        loss = pseudo_loss * 0.2
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
     batch_loss /= (tr_idx+1)
     batch_f1 = f1_score(batch_f1_target, batch_f1_pred, average='macro')
     return batch_loss, batch_f1

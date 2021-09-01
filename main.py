@@ -46,10 +46,9 @@ if __name__ == "__main__":
     config = read_config(CONFIG_PATH)
     config.config_file_name = config_file_name
     config.mode = 'Classification' #'Regression'
-    # trasform
+    # trasform#321 258
     transform_train = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         HorizontalFlip(p=0.5),
         GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -58,8 +57,8 @@ if __name__ == "__main__":
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+#        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -100,10 +99,6 @@ if __name__ == "__main__":
     
     # unbalanced 클래스에 가중치를 주기 위한 것
     # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
-    
-    pesudo_image_path = unlabeled_dataset()
-    pesudo_dataset = TestDataset(pesudo_image_path, transform_train)
-    pesudo_dataloader = DataLoader(pesudo_dataset, batch_size=32, num_workers=3, shuffle=True )
 
     # Cross validation 안할때
     if config.k_fold_num == -1:
@@ -136,7 +131,7 @@ if __name__ == "__main__":
         print("Data Loading... Success!!")
         
         print("Train Start!!")
-        best_model = train(train_loader, valid_loader, class_weight, -1, config, pesudo_dataloader)
+        best_model = train(train_loader, valid_loader, class_weight, -1, config)
 
     # Cross validation 할때
     else:       
@@ -171,5 +166,5 @@ if __name__ == "__main__":
             valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
             
             print("Train Start!!")
-            best_model = train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_dataloader)
+            best_model = train(train_loader, valid_loader, class_weight, fold_index, config)
             run.finish()

@@ -103,19 +103,19 @@ def new_train_dataset(train_path, img_path, config):
                 new_dict['id'].append(raw['id'].iloc[raw_idx])
                 new_dict['mask'].append('wear')
                 new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
+                new_dict['age'].append(int(age))
                 new_dict['path'].append(os.path.join(person_path, imgp))
             elif imgp[0] == 'i':
                 new_dict['id'].append(raw['id'].iloc[raw_idx])
                 new_dict['mask'].append('incorrect')
                 new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
+                new_dict['age'].append(int(age))
                 new_dict['path'].append(os.path.join(person_path, imgp))
             elif imgp[0] == 'n':
                 new_dict['id'].append(raw['id'].iloc[raw_idx])
                 new_dict['mask'].append('not wear')
                 new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
+                new_dict['age'].append(int(age))
                 new_dict['path'].append(os.path.join(person_path, imgp))
             else:
                 pass
@@ -141,33 +141,35 @@ def get_label(df, model_type):
     elif model_type == 'Gender':
         df.loc[(df['gender']=='male'), 'class'] = 0
         df.loc[(df['gender']=='female'), 'class'] = 1
+    elif model_type == 'All':
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 0
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 1
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 2            
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 3
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 4
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 5
+
+        #mask=incorrect
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 6
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 7
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 8
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 9
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 10
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 11
+
+        #mask=normal
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 12
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 13
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 14            
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 15
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 16
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 17
     else:
         print('Wrong Prediction Type!!')
         exit(1)
     # 18 클래스 생성(라벨링)
     #mask=wear
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 0
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 1
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 2            
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 3
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 4
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 5
-
-    # #mask=incorrect
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 6
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 7
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 8
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 9
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 10
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 11
-
-    # #mask=normal
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 12
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 13
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 14            
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 15
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 16
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 17
+    
     df = df.astype({'class':int})
     return df
 
@@ -189,8 +191,9 @@ def make_train_list(df, config, valid_ids):
             print("Wrong learning type!!")
             exit(1)
     else:
+        print(config.prediction_type)
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))][target]
-        valid_list, valid_label = df[df['id'].isin(valid_ids) & (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
+        valid_list, valid_label = df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
     
     return train_list, train_label, valid_list, valid_label
 
@@ -204,13 +207,15 @@ def make_fold(fold_num, df):
     #     df2 = df2[~df2['id'].isin(v)]
     #     folds.append(v)
     # del df2
-    
+    #print(len(set(df2['id'])))
+    #print(np.around(540 / len(set(df2['id'])), 1))
     # ver2
     # aug로 인한 균형 맞춰진것 영향 없애기
+    fold_ratio = [0.2, 0.25, 0.3, 0.5, 0.99]
     df2 = df[(~df['path'].str.contains('aug'))]
     for i in range(fold_num):
-        fold_ratio = np.around(540 / len(set(df2['id'])), 1)
-        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
+        #fold_ratio = np.around(540 / len(set(df2['id'])), 1)
+        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio[i], random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
     del df2
@@ -245,7 +250,7 @@ def get_label_added_data_for_age(age):
 
 def unlabeled_dataset():
     test_dir = '/opt/ml/input/data/eval'
-    image_dir = os.path.join(test_dir, 'images')
+    image_dir = os.path.join(test_dir, 'cropped_images')
     submission = pd.read_csv(os.path.join(test_dir, 'info.csv'))
     image_paths = [os.path.join(image_dir, img_id) for img_id in submission.ImageID]
     return image_paths
