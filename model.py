@@ -68,7 +68,7 @@ class SWSLResnext50(nn.Module):
         x = self.pretrained(x)
         return x
 
-class MobilenetV3(nn.Module):
+class MobilenetV2(nn.Module):
     def __init__(self, num_classes: int = 1000):
         super().__init__()
         self.pretrained = timm.create_model('mobilenetv2_100', pretrained=True)
@@ -91,10 +91,24 @@ class VIT(nn.Module):
             nn.LeakyReLU(0.3),
             nn.Linear(256, num_classes, bias=True),
         )
-
+        self.randomforest = RandomForestClassifier(n_estimators=100, oob_score=True, random_state=42)
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.pretrained(x)
         return x
+
+
+# class VIT(nn.Module):
+#     def __init__(self, num_classes: int = 1000):
+#         super().__init__()
+#         self.pretrained = timm.create_model('vit_base_patch16_384', pretrained=True)
+
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         for name, param in model.named_parameters():
+#             if name in ['norm.weight', 'norm.bias', 'head.weight', 'head.bias']:
+#                 param.requires_grad = False
+#         x = self.pretrained(x)
+#         return x
+
 
 class VGG19(nn.Module):
     def __init__(self, num_classes: int = 1000):
@@ -110,13 +124,27 @@ class VGG19(nn.Module):
         x = self.pretrained(x)
         return x
 
+class Efficientnet_b0(nn.Module):
+    def __init__(self, num_classes: int = 1000):
+        super().__init__()
+        self.pretrained = timm.create_model('efficientnet_b0', pretrained=True)
+        self.pretrained.classifier = nn.Sequential(
+            nn.Linear(1280, 512, bias=True),
+            nn.LeakyReLU(0.3),
+            nn.Linear(512, num_classes, bias=True),
+            # nn.LeakyReLU(0.3),
+            # nn.Linear(256, 18, bias=True),
+        )
+
 def get_model(config):
     if config.model_name == 'efficientnet_b3a':
         model = Efficientnet(num_classes=config.num_classes).to(config.device)
+    elif config.model_name == 'Efficientnet_b0':
+        model = Efficientnet_b0(num_classes=config.num_classes).to(config.device)
     elif config.model_name == 'swsl_resnext50_32x4d':
         model = SWSLResnext50(num_classes=config.num_classes).to(config.device)
     elif config.model_name == 'mobilenetv2_100':
-        model = MobilenetV3(num_classes=config.num_classes).to(config.device)     
+        model = MobilenetV2(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'vgg19_bn':
         model = VGG19(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'vit_base_patch16_384':
