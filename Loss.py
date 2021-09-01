@@ -72,5 +72,7 @@ def get_loss(config, class_weigth):
         loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weigth).to(config.device, dtype=torch.float))
     elif config.loss == 'Foscal':
         loss_func1 = FocalLoss()
+    elif config.loss == 'Crossentropy_focal_labelsmoothing':
+        loss_func1 = CrossEntropy_FoscalLoss_LabelSmoothingLoss()
         
     return loss_func1
