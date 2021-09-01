@@ -33,9 +33,12 @@ class ArcModule(nn.Module):
     def forward(self, inputs, labels):
         cos_th = F.linear(inputs, F.normalize(self.weight))
         cos_th = cos_th.clamp(-1, 1)
+        cos_th = cos_th.type(torch.float32)
         sin_th = torch.sqrt(1.0 - torch.pow(cos_th, 2))
         cos_th_m = cos_th * self.cos_m - sin_th * self.sin_m
-        # print(type(cos_th), type(self.th), type(cos_th_m), type(self.mm))
+        #print(type(cos_th), type(self.th), type(cos_th_m), type(self.mm))
+        #print((cos_th), (self.th), (cos_th_m), (self.mm))
+        
         cos_th_m = torch.where(cos_th > self.th, cos_th_m, cos_th - self.mm)
 
         cond_v = cos_th - self.th
@@ -65,7 +68,7 @@ class SHOPEEDenseNet(nn.Module):
         self.margin = ArcModule(in_features=self.channel_size, out_features = self.out_feature)
         self.bn1 = nn.BatchNorm2d(self.in_features)
         self.dropout = nn.Dropout2d(dropout, inplace=True)
-        self.fc1 = nn.Linear(self.in_features * 12 * 12 , self.channel_size)
+        self.fc1 = nn.Linear(self.in_features * 7 * 7 , self.channel_size)
         # self.fc1 = nn.Linear(self.in_features, self.channel_size)
 
         # self.fc1 = nn.Linear(self.in_features, self.out_feature)
@@ -75,7 +78,7 @@ class SHOPEEDenseNet(nn.Module):
         features = self.backbone(x)
         features = self.bn1(features)
         features = self.dropout(features)
-        # print(features.shape)
+        #print(features.shape)
         features = features.view(features.size(0), -1)
         features = self.fc1(features)
         features = self.bn2(features)
@@ -238,5 +241,9 @@ def get_model(config):
     elif config.model_name == 'vit_base_patch16_384':
         model = VIT(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'SHOPEEDenseNet':
-        model = SHOPEEDenseNet(384, out_feature=config.num_classes).to(config.device)    
+        model = SHOPEEDenseNet(224, out_feature=config.num_classes).to(config.device)    
     return model
+
+# model = SHOPEEDenseNet(224, 18)
+# print(model)
+#summary(SHOPEEDenseNet(384, 18), input_size=(3, 384, 384), device='cpu')

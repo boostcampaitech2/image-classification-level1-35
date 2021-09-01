@@ -103,13 +103,14 @@ def logging_with_sysprint(e, batch_loss, batch_f1, running_loss, running_acc, ru
             f"valid_f1:{running_f1:.5f}"
             )
 
-# class_weigths 계산
+# class_weights 계산
 def get_class_weights(train_label):
     _ , class_num = np.unique(train_label, return_counts = True)
     print("Class Balance: ", class_num)
+    
     base_class = np.max(class_num)
-    class_weigth = (base_class / np.array(class_num))
-    return class_weigth
+    class_weight = (base_class / np.array(class_num))
+    return class_weight
 
 # 필요 없는 것!
 def reset_wandb_env():

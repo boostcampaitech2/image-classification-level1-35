@@ -59,11 +59,11 @@ class TrainDataset(Dataset):
         # 이미지는 전처리 적용해서 반환
         if self.transform:
             img = (self.transform(image=img))['image']
-
+            
         if self.config.mode == 'Regression':
-            return img.float(), torch.tensor([self.y[index]]).float()
+            return img.type(torch.float32), torch.tensor([self.y[index]]).float()
         else:
-            return img.float(), self.y[index]
+            return img.type(torch.float32), self.y[index]
 
 class TestDataset(Dataset):
     def __init__(self, img_paths, transform):
@@ -129,6 +129,12 @@ def get_label(df, model_type):
         df.loc[(df['mask']=='not wear'), 'class'] = 1
         df.loc[(df['mask']=='incorrect'), 'class'] = 2
     elif model_type == 'Age':
+        # df.loc[(df['age'] >= 10)&(df['age']< 20), 'class'] = 0
+        # df.loc[(df['age'] >= 20)&(df['age']< 30), 'class'] = 1
+        # df.loc[(df['age'] >= 30)&(df['age']< 40), 'class'] = 2
+        # df.loc[(df['age'] >= 40)&(df['age']< 50), 'class'] = 3
+        # df.loc[(df['age'] >= 50)&(df['age']< 60), 'class'] = 4
+        # df.loc[(df['age'] >= 60), 'class'] = 5
         df.loc[(df['age'] < 30), 'class'] = 0
         df.loc[(df['age'] >= 30)&(df['age']< 60), 'class'] = 1
         df.loc[(df['age'] >= 60), 'class'] = 2            
@@ -203,7 +209,7 @@ def make_fold(fold_num, df):
     # aug로 인한 균형 맞춰진것 영향 없애기
     df2 = df[(~df['path'].str.contains('aug'))]
     for i in range(fold_num):
-        fold_ratio = 540 / len(set(df2['id']))
+        fold_ratio = np.around(540 / len(set(df2['id'])), 1)
         train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
@@ -236,7 +242,15 @@ def get_label_added_data_for_age(age):
         return 1
     else:
         return 2
-        
+
+def unlabeled_dataset():
+    test_dir = '/opt/ml/input/data/eval'
+    image_dir = os.path.join(test_dir, 'images')
+    submission = pd.read_csv(os.path.join(test_dir, 'info.csv'))
+    image_paths = [os.path.join(image_dir, img_id) for img_id in submission.ImageID]
+    return image_paths
+
+
 class SiameseNetworkDataset(Dataset):
     
     def __init__(self, img_list, label_list, transform):

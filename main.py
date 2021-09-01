@@ -1,6 +1,8 @@
 import os
 import sys, getopt
 
+from pandas.core.frame import DataFrame
+
 from dataset import *
 from Loss import *
 from train import *
@@ -13,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
+    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     argv = sys.argv
     FILE_NAME = argv[0] # 실행시키는 파일명
     CONFIG_PATH = ""   # config file 경로
@@ -45,9 +48,10 @@ if __name__ == "__main__":
     config.mode = 'Classification' #'Regression'
     # trasform
     transform_train = Compose([
-        RandomCrop(always_apply=True, height=384, width=384, p=1.0),
+        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224, 224, always_apply=True, p=1.0),
         HorizontalFlip(p=0.5),
-        GaussNoise(var_limit=(1000, 1300), p=0.5),
+        GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
         Cutout(num_holes=np.random.randint(30,50,1)[0], max_h_size=10, max_w_size=10 ,p=0.5),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
@@ -55,6 +59,7 @@ if __name__ == "__main__":
     ])
     transform_valid = Compose([
         CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(224, 224, always_apply=True, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
@@ -96,6 +101,10 @@ if __name__ == "__main__":
     # unbalanced 클래스에 가중치를 주기 위한 것
     # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
     
+    pesudo_image_path = unlabeled_dataset()
+    pesudo_dataset = TestDataset(pesudo_image_path, transform_train)
+    pesudo_dataloader = DataLoader(pesudo_dataset, batch_size=32, num_workers=3, shuffle=True )
+
     # Cross validation 안할때
     if config.k_fold_num == -1:
         group_name = f'{config.model_name}'
@@ -112,7 +121,7 @@ if __name__ == "__main__":
         #     train_list = pd.concat([train_list, age_df['path']], axis=0)
         #     train_label = pd.concat([train_label, age_df['class']], axis=0)
 
-        class_weigth = get_class_weights(train_label)
+        class_weight = get_class_weights(train_label)
 
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
         train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train, config)
@@ -127,7 +136,7 @@ if __name__ == "__main__":
         print("Data Loading... Success!!")
         
         print("Train Start!!")
-        best_model = train(train_loader, valid_loader, class_weigth, -1, config)
+        best_model = train(train_loader, valid_loader, class_weight, -1, config, pesudo_dataloader)
 
     # Cross validation 할때
     else:       
@@ -149,7 +158,7 @@ if __name__ == "__main__":
   
             print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
 
-            class_weigth = get_class_weights(train_label)
+            class_weight = get_class_weights(train_label)
 
             # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
             train_dataset = TrainDataset(np.array(train_list), np.array(train_label), transform_train, config)
@@ -162,5 +171,5 @@ if __name__ == "__main__":
             valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
             
             print("Train Start!!")
-            best_model = train(train_loader, valid_loader, class_weigth, fold_index, config)
+            best_model = train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_dataloader)
             run.finish()
