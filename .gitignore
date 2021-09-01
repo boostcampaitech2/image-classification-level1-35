@@ -3,3 +3,6 @@ config/
 *.log
 *.out
 nohup.out
+__pycache__/
+*.py[cod]
+*$py.class
