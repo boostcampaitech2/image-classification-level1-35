@@ -126,8 +126,7 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
 # 1 epoch에 대한 훈련 코드
 def train_per_epoch_with_pseudo_labeling(epoch, train_loader, model, best_model,loss_func, optimizer, config, pesudo_image_path):
     transform_train = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         HorizontalFlip(p=0.5),
         GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -136,8 +135,8 @@ def train_per_epoch_with_pseudo_labeling(epoch, train_loader, model, best_model,
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+#        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])
