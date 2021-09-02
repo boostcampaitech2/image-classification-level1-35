@@ -14,6 +14,7 @@ from albumentations.pytorch import ToTensorV2
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
+print("a")
 if __name__ == "__main__":
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     argv = sys.argv
