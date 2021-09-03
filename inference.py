@@ -42,9 +42,10 @@ def folds_inference(MODEL_PATH, SAVE_PATH, loader):
         save_name = SAVE_PATH
 
     all_predictions = []
-    for model_path in os.listdir(MODEL_PATH):
+    for idx, model_path in enumerate(os.listdir(MODEL_PATH)):
+        print('-'*10, f"Fold {idx} Start", '-'*10)
         print(f'Inference {model_path}')
-        model = torch.load(model_path).to(device)
+        model = torch.load(os.path.join(MODEL_PATH, model_path)).to(device)
         model.eval()
         # 모델이 테스트 데이터셋을 예측하고 결과를 저장합니다.
         all_prediction = []
@@ -94,7 +95,7 @@ if __name__ == "__main__":
         elif opt in ("-s", "--save_path"):
             SAVE_PATH = arg
         elif opt in ("-t", "--inference_type"):
-            INFERENCE_TYPE = arg.tolower()
+            INFERENCE_TYPE = arg.lower()
     
     # 입력이 필수적인 옵션
     if len(MODEL_PATH) < 1:
@@ -105,6 +106,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # 데이터 불러오기
+    print('-'*10, "Data loading", '-'*10)
     test_dir = '/opt/ml/input/data/eval'
     submission = pd.read_csv(DATA_PATH)
     image_dir = os.path.join(test_dir, 'images')
@@ -120,7 +122,9 @@ if __name__ == "__main__":
         dataset,
         shuffle=False
     )
+    print('-'*10, "Data loading complete", '-'*10)
 
+    print('-'*10, "Inference Start", '-'*10)
     if INFERENCE_TYPE == 'none':
         df = single_inference(MODEL_PATH, SAVE_PATH, loader)
     else:
