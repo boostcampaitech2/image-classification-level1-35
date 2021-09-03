@@ -182,7 +182,6 @@ def make_train_list(df, config, valid_ids):
 def make_fold(fold_num, df):
     folds = []
     df2 = df
-    num_of_person = len(pd.unique(df['id']))
     
     # ver2
     # aug로 인한 균형 맞춰진것 영향 없애기
