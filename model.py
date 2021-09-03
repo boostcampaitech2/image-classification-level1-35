@@ -1,17 +1,7 @@
 import torch
-from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models  as cvmodels
-import torch.optim as optim
-import torchvision.datasets as dset
-import torchvision.transforms as T
-from torchvision.transforms import Compose, Resize, ToTensor
-
-from einops import rearrange, repeat, reduce
-from einops.layers.torch import Rearrange, Reduce
-
-from torchsummary import summary
 import timm
 import math
 
@@ -33,9 +23,9 @@ class ArcModule(nn.Module):
     def forward(self, inputs, labels):
         cos_th = F.linear(inputs, F.normalize(self.weight))
         cos_th = cos_th.clamp(-1, 1)
+        cos_th = cos_th.type(torch.float32)
         sin_th = torch.sqrt(1.0 - torch.pow(cos_th, 2))
-        cos_th_m = cos_th * self.cos_m - sin_th * self.sin_m
-        # print(type(cos_th), type(self.th), type(cos_th_m), type(self.mm))
+        cos_th_m = cos_th * self.cos_m - sin_th * self.sin_m   
         cos_th_m = torch.where(cos_th > self.th, cos_th_m, cos_th - self.mm)
 
         cond_v = cos_th - self.th
@@ -65,17 +55,14 @@ class SHOPEEDenseNet(nn.Module):
         self.margin = ArcModule(in_features=self.channel_size, out_features = self.out_feature)
         self.bn1 = nn.BatchNorm2d(self.in_features)
         self.dropout = nn.Dropout2d(dropout, inplace=True)
-        self.fc1 = nn.Linear(self.in_features * 12 * 12 , self.channel_size)
-        # self.fc1 = nn.Linear(self.in_features, self.channel_size)
-
-        # self.fc1 = nn.Linear(self.in_features, self.out_feature)
+        self.fc1 = nn.Linear(self.in_features * 7 * 7 , self.channel_size)
         self.bn2 = nn.BatchNorm1d(self.channel_size)
         
     def forward(self, x, labels=None):
         features = self.backbone(x)
         features = self.bn1(features)
         features = self.dropout(features)
-        # print(features.shape)
+        #print(features.shape)
         features = features.view(features.size(0), -1)
         features = self.fc1(features)
         features = self.bn2(features)
@@ -83,9 +70,6 @@ class SHOPEEDenseNet(nn.Module):
         if labels is not None:
             return self.margin(features, labels)
         return features
-
-
-
 
 class MyModel(nn.Module):
     def __init__(self, num_classes: int = 1000):
@@ -115,10 +99,7 @@ class Efficientnet(nn.Module):
             nn.Linear(1536, 512, bias=True),
             nn.LeakyReLU(0.3),
             nn.Linear(512, num_classes, bias=True),
-            # nn.LeakyReLU(0.3),
-            # nn.Linear(256, 18, bias=True),
         )
-        #nn.init.xavier_uniform(self.efficient.classifier.weight)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.pretrained(x)
@@ -132,10 +113,7 @@ class SWSLResnext50(nn.Module):
             nn.Linear(2048, 512, bias=True),
             nn.LeakyReLU(0.3),
             nn.Linear(512, num_classes, bias=True),
-            # nn.LeakyReLU(0.3),
-            # nn.Linear(256, 18, bias=True),
         )
-        #nn.init.xavier_uniform(self.efficient.classifier.weight)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.pretrained(x)
@@ -146,9 +124,7 @@ class MobilenetV2(nn.Module):
         super().__init__()
         self.pretrained = timm.create_model('mobilenetv2_100', pretrained=True)
         self.pretrained.classifier = nn.Sequential(
-            nn.Linear(1280, 512, bias=True),
-            nn.LeakyReLU(0.3),
-            nn.Linear(512, num_classes, bias=True),
+            nn.Linear(1280, num_classes, bias=True),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -167,19 +143,6 @@ class VIT(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.pretrained(x)
         return x
-
-
-# class VIT(nn.Module):
-#     def __init__(self, num_classes: int = 1000):
-#         super().__init__()
-#         self.pretrained = timm.create_model('vit_base_patch16_384', pretrained=True)
-#     def forward(self, x: torch.Tensor) -> torch.Tensor:
-#         for name, param in model.named_parameters():
-#             if name in ['norm.weight', 'norm.bias', 'head.weight', 'head.bias']:
-#                 param.requires_grad = False
-#         x = self.pretrained(x)
-#         return x
-
 
 class VGG19(nn.Module):
     def __init__(self, num_classes: int = 1000):
@@ -203,8 +166,6 @@ class Efficientnet_b0(nn.Module):
             nn.Linear(1280, 512, bias=True),
             nn.LeakyReLU(0.3),
             nn.Linear(512, num_classes, bias=True),
-            # nn.LeakyReLU(0.3),
-            # nn.Linear(256, 18, bias=True),
         )
 
 def get_model(config):
@@ -221,5 +182,5 @@ def get_model(config):
     elif config.model_name == 'vit_base_patch16_384':
         model = VIT(num_classes=config.num_classes).to(config.device)     
     elif config.model_name == 'SHOPEEDenseNet':
-        model = SHOPEEDenseNet(384, out_feature=config.num_classes).to(config.device)    
+        model = SHOPEEDenseNet(224, out_feature=config.num_classes).to(config.device)    
     return model
