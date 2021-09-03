@@ -101,3 +101,6 @@ E.g. main.py -c config.ini
 ```
 
 # Inference
+```
+inference.py -m <model path> -d <eval data path>
+```
