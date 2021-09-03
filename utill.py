@@ -54,6 +54,7 @@ def read_config(paths):
     config.prediction_type =  values['training']['prediction_type']
     config.learning_type = values['training']['learning_type']
     config.num_classes = int(values['training']['num_classes'])
+    config.Age_external_data_load = values['training'].getboolean('Age_external_data_load', 'b')
     
     return config
 
@@ -111,14 +112,3 @@ def get_class_weights(train_label):
     base_class = np.max(class_num)
     class_weight = (base_class / np.array(class_num))
     return class_weight
-
-# 필요 없는 것!
-def reset_wandb_env():
-    exclude = {
-        "WANDB_PROJECT",
-        "WANDB_ENTITY",
-        "WANDB_API_KEY",
-    }
-    for k, v in os.environ.items():
-        if k.startswith("WANDB_") and k not in exclude:
-            del os.environ[k]

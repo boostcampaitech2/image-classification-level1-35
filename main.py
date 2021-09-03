@@ -1,8 +1,6 @@
 import os
 import sys, getopt
 
-from pandas.core.frame import DataFrame
-
 from dataset import *
 from Loss import *
 from train import *
@@ -78,49 +76,31 @@ if __name__ == "__main__":
     df = new_train_dataset(config.train_csv_path, config.train_images_path, config)
     df = get_label(df, config.prediction_type)
 
-    # if config.prediction_type == 'Age':
-    #     age_df = read_age_data()
+    if config.prediction_type == 'Age' and config.Age_external_data_load:
+        age_df = read_age_data()
 
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
 
-    #print(np.array(folds).shape)
-
-    # augmentation == True 이면 
-    # 정해신 target class에 대한 이미지만 augmentation
-    # [2770 2045 2490 3635 4090 3270 3324 2454 2282 4362 4908 2834 3324 2454 2292 4362 4908 2834]
-    # if config.augmentation:
-    #     print("-"*10,"Start Augmentation", "-"*10)
-    #     print("Target: ", config.aug_targets)
-    #     preprocess = Preprocessing(img_list, y_list, config.aug_targets, config.aug_num)
-    #     preprocess.augmentation()
-    #     # augmentation된 이미지까지 추가된 path, label 받아오기
-    #     img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
-    #     print("-"*10,"End Augmentation", "-"*10)    
-    
-    # unbalanced 클래스에 가중치를 주기 위한 것
-    # 가장 많은 클래스 데이터 수 / 해당 클래스 데이터수
-    
-    pesudo_image_path = unlabeled_dataset()
-    pesudo_dataset = TestDataset(pesudo_image_path, transform_train)
-    pesudo_dataloader = DataLoader(pesudo_dataset, batch_size=32, num_workers=3, shuffle=True )
-
     # Cross validation 안할때
     if config.k_fold_num == -1:
+        # wandb 설정
         group_name = f'{config.model_name}'
         name = f'{config.model_name}_{config_file_name}'
         wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=config.wandb_name, config=config, settings=wandb.Settings(start_method="fork"))
+        
         # train, valid 데이터 분리
         # train_test_split(X, y, 훈련크기(0.8 이면 80%), stratify = (클래스 별로 분할후 데이터 추출 => 원래 데이터의 클래스 분포와 유사하게 뽑아준다) )
         # random_state는 원하는 숫자로 고정하시면 됩니다! 저는 42를 주로써서...
-    
         valid_ids = df.groupby('id')['id'].sample(n=1).sample(n=540, random_state=42, replace=False)
         train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
         
-        # if config.prediction_type == 'Age':
-        #     train_list = pd.concat([train_list, age_df['path']], axis=0)
-        #     train_label = pd.concat([train_label, age_df['class']], axis=0)
+        if config.prediction_type == 'Age' and config.Age_external_data_load:
+            train_list = pd.concat([train_list, age_df['path']], axis=0)
+            train_label = pd.concat([train_label, age_df['class']], axis=0)
 
+        # class_weight 계산 -> 가장 많은 클래스 데이터 수 / 해당 클래스 데이터 수
+        # E.g. [10, 25, 50] -> [5, 2, 1]
         class_weight = get_class_weights(train_label)
 
         # dataset.py에서 구현한 dataset class로 훈련 데이터 정의
@@ -136,7 +116,7 @@ if __name__ == "__main__":
         print("Data Loading... Success!!")
         
         print("Train Start!!")
-        best_model = train(train_loader, valid_loader, class_weight, -1, config, pesudo_dataloader)
+        model = train(train_loader, valid_loader, class_weight, -1, config)
 
     # Cross validation 할때
     else:       
@@ -145,18 +125,18 @@ if __name__ == "__main__":
         # kf가 랜덤으로 섞어서 추출해 index들을 반환
         for fold_index, valid_ids in enumerate(folds):
             print(f'{fold_index} fold start -')
+            # 각 fold별 best model 저장할 배열
+            models = []
+            # wandb 설정
             group_name = f'{config.model_name}_fold'
             name = f'{config.wandb_name}_{fold_index}'
-
             run = wandb.init(project=config.wandb_project_name, entity=config.wandb_entity, group=config.wandb_group_name, name=name, config=config, settings=wandb.Settings(start_method="fork"))
             
             train_list, train_label, valid_list, valid_label = make_train_list(df, config, valid_ids)
             
-            # if config.prediction_type == 'Age':
-            #     train_list = pd.concat([train_list, age_df['path']], axis=0)
-            #     train_label = pd.concat([train_label, age_df['class']], axis=0)
-  
-            print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
+            if config.prediction_type == 'Age' and config.Age_external_data_load:
+                train_list = pd.concat([train_list, age_df['path']], axis=0)
+                train_label = pd.concat([train_label, age_df['class']], axis=0)
 
             class_weight = get_class_weights(train_label)
 
@@ -170,6 +150,8 @@ if __name__ == "__main__":
             train_loader = DataLoader(train_dataset, batch_size=config.batch_size, num_workers=3, shuffle=True)
             valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, num_workers=3, shuffle=False)
             
+            print(f'Train_Data: {train_list.shape}, Validation_Data: {valid_list.shape}')
             print("Train Start!!")
-            best_model = train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_dataloader)
+            model = train(train_loader, valid_loader, class_weight, fold_index, config)
+            models.append(model)
             run.finish()

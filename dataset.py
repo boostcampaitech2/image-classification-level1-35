@@ -7,35 +7,9 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms as T
 from albumentations import *
-import matplotlib.pyplot as plt
+
 from pandas_streaming.df import train_test_apart_stratify
-import random
 
-# Data augmentation을 위한 클래스
-class Preprocessing():
-    def __init__(self, pathes, labels, targets, aug_num):
-        self.pathes = pathes
-        self.y = labels
-        self.targets = targets
-        self.aug_num = aug_num
-
-    # AutoAugmentPolicy = IMAGENET
-    def augmentation(self):
-        policy = T.AutoAugmentPolicy.IMAGENET
-        augmenter = T.AutoAugment(policy)
-        
-        for idx, path in enumerate(self.pathes):
-            # 정해진 클래스가 아니면 augmentation 실행 X
-            if self.y[idx] not in self.targets:
-                continue
-            img = Image.open(path)
-            for _ in range(self.aug_num):
-                processed_img = augmenter(img)
-                file_name = path.split('/')[-1].split('.')[0]
-                new_path = path.replace(file_name, file_name + "_aug_" + str(_))
-
-                # 이미지 저장
-                processed_img.save(new_path)
 
 # Dataset 클래스 정의
 class TrainDataset(Dataset):
@@ -65,27 +39,28 @@ class TrainDataset(Dataset):
         else:
             return img.type(torch.float32), self.y[index]
 
-class TestDataset(Dataset):
-    def __init__(self, img_paths, transform):
-        self.img_paths = img_paths
-        self.transform = transform
+# Data augmentation을 위한 함수
+def augmentation(pathes, labels, targets, aug_num):
+    # AutoAugmentPolicy = IMAGENET
+    policy = T.AutoAugmentPolicy.IMAGENET
+    augmenter = T.AutoAugment(policy)
+    
+    for idx, path in enumerate(pathes):
+        # 정해진 클래스가 아니면 augmentation 실행 X
+        if labels[idx] not in targets:
+            continue
+        img = Image.open(path)
+        for _ in range(aug_num):
+            processed_img = augmenter(img)
+            file_name = path.split('/')[-1].split('.')[0]
+            new_path = path.replace(file_name, file_name + "_aug_" + str(_))
 
-    def __getitem__(self, index):
-        image = Image.open(self.img_paths[index])
-
-        if self.transform:
-            image = self.transform(image=np.array(image))['image']
-        return image.float()
-
-    def __len__(self):
-        return len(self.img_paths)
+            # 이미지 저장
+            processed_img.save(new_path)
 
 def new_train_dataset(train_path, img_path, config):
 
     raw = pd.read_csv(train_path)
-
-    #사람별 폴더의 파일 7개 경로 가져오기
-    path = []
     new_dict = {
         'id':[],
         'age' : [],
@@ -129,45 +104,41 @@ def get_label(df, model_type):
         df.loc[(df['mask']=='not wear'), 'class'] = 1
         df.loc[(df['mask']=='incorrect'), 'class'] = 2
     elif model_type == 'Age':
-        # df.loc[(df['age'] >= 10)&(df['age']< 20), 'class'] = 0
-        # df.loc[(df['age'] >= 20)&(df['age']< 30), 'class'] = 1
-        # df.loc[(df['age'] >= 30)&(df['age']< 40), 'class'] = 2
-        # df.loc[(df['age'] >= 40)&(df['age']< 50), 'class'] = 3
-        # df.loc[(df['age'] >= 50)&(df['age']< 60), 'class'] = 4
-        # df.loc[(df['age'] >= 60), 'class'] = 5
         df.loc[(df['age'] < 30), 'class'] = 0
         df.loc[(df['age'] >= 30)&(df['age']< 60), 'class'] = 1
         df.loc[(df['age'] >= 60), 'class'] = 2            
     elif model_type == 'Gender':
         df.loc[(df['gender']=='male'), 'class'] = 0
         df.loc[(df['gender']=='female'), 'class'] = 1
+    elif model_type == 'All':
+        #mask=wear
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 0
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 1
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 2            
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 3
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 4
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 5
+
+        #mask=incorrect
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 6
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 7
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 8
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 9
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 10
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 11
+
+        #mask=normal
+        df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 12
+        df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 13
+        df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 14            
+        df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 15
+        df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 16
+        df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 17
     else:
         print('Wrong Prediction Type!!')
         exit(1)
     # 18 클래스 생성(라벨링)
-    #mask=wear
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 0
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 1
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 2            
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='wear'), 'class'] = 3
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='wear'), 'class'] = 4
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='wear'), 'class'] = 5
-
-    # #mask=incorrect
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 6
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 7
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 8
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='incorrect'), 'class'] = 9
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='incorrect'), 'class'] = 10
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='incorrect'), 'class'] = 11
-
-    # #mask=normal
-    # df.loc[(df['gender']=='male')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 12
-    # df.loc[(df['gender']=='male')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 13
-    # df.loc[(df['gender']=='male')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 14            
-    # df.loc[(df['gender']=='female')&(df['age'] < 30)&(df['mask']=='not wear'), 'class'] = 15
-    # df.loc[(df['gender']=='female')&(df['age'] >= 30)&(df['age']< 60)&(df['mask']=='not wear'), 'class'] = 16
-    # df.loc[(df['gender']=='female')&(df['age'] >= 60)&(df['mask']=='not wear'), 'class'] = 17
+    
     df = df.astype({'class':int})
     return df
 
@@ -191,32 +162,27 @@ def make_train_list(df, config, valid_ids):
     else:
         train_list, train_label = df[(~df['id'].isin(valid_ids))]['path'], df[(~df['id'].isin(valid_ids))][target]
         valid_list, valid_label = df[df['id'].isin(valid_ids) & (~df['path'].str.contains('aug'))]['path'], df[df['id'].isin(valid_ids)& (~df['path'].str.contains('aug'))][target]
-    
+
     return train_list, train_label, valid_list, valid_label
 
 def make_fold(fold_num, df):
     folds = []
     df2 = df
     num_of_person = len(pd.unique(df['id']))
-    # ver1
-    # for i in range(fold_num):
-    #     v = df2.groupby('id')['id'].sample(n=1).sample(n=fold_size, random_state=42, replace=False)
-    #     df2 = df2[~df2['id'].isin(v)]
-    #     folds.append(v)
-    # del df2
     
     # ver2
     # aug로 인한 균형 맞춰진것 영향 없애기
     df2 = df[(~df['path'].str.contains('aug'))]
+    fold_ratio = [0.2, 0.25, 0.3, 0.6, 0.99]
     for i in range(fold_num):
-        fold_ratio = np.around(540 / len(set(df2['id'])), 1)
-        train, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
+        _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio[i], random_state = 42)
         df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
         folds.append(test['id'])
     del df2
 
     return folds
 
+# 외부 데이터(나이 모델 용) 로드
 def read_age_data():
     path = '../../input/data/train/Age/'
     img_dict = {'id':[], 'age':[], 'path':[], 'class':[]}
@@ -243,52 +209,10 @@ def get_label_added_data_for_age(age):
     else:
         return 2
 
+# Eval data 로드
 def unlabeled_dataset():
     test_dir = '/opt/ml/input/data/eval'
     image_dir = os.path.join(test_dir, 'images')
     submission = pd.read_csv(os.path.join(test_dir, 'info.csv'))
     image_paths = [os.path.join(image_dir, img_id) for img_id in submission.ImageID]
     return image_paths
-
-
-class SiameseNetworkDataset(Dataset):
-    
-    def __init__(self, img_list, label_list, transform):
-        self.img_list = img_list    
-        self.label_list = label_list    
-        self.transform = transform
-        
-    def __getitem__(self, index):
-        target_image_idx = index
-        
-        #we need to make sure approx 50% of images are in the same class
-        should_get_same_class = random.randint(0,1) 
-        if should_get_same_class:
-            while True:
-                #keep looping till the same class image is found
-                compare_image_idx = np.random.choice(len(self.label_list), 1)
-                if self.label_list[index] == self.label_list[compare_image_idx]:
-                    break
-        else:
-            while True:
-                #keep looping till a different class image is found  
-                compare_image_idx = np.random.choice(len(self.label_list), 1)
-                if self.label_list[target_image_idx] == self.label_list[compare_image_idx]:
-                    break
-
-        target_image = Image.open(self.img_list[target_image_idx])
-        compare_image = Image.open(self.img_list[compare_image_idx])
-        target_image = target_image.convert("L")
-        compare_image = compare_image.convert("L")
-        
-        # if self.should_invert:
-        #     target_image = PIL.ImageOps.invert(target_image)
-        #     compare_image = PIL.ImageOps.invert(compare_image)
-        if self.transform:
-            target_image = self.transform(image=np.array(target_image))['image']
-            compare_image = self.transform(image=np.array(compare_image))['image']
-          
-        return target_image.float(), compare_image.float() , torch.from_numpy(np.array([int(self.label_list[target_image_idx]!=self.label_list[compare_image_idx])],dtype=np.float32))
-    
-    def __len__(self):
-        return len(self.imageFolderDataset.imgs)

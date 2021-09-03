@@ -14,14 +14,13 @@ from tqdm import tqdm
 import wandb
 import torch.cuda
 
-def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_dataloader):
+def train(train_loader, valid_loader, class_weight, fold_index, config):
     # 모델 생성
     print("Model Generation...")
     model = get_model(config)
     wandb.watch(model)
     # 모델 정보 출력
     print(model)
-    #summary(model, input_size=(3, 512, 384), device=device)
 
     # 학습
     loss_func = get_loss(config, class_weight)
@@ -29,7 +28,7 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
     scheduler = get_scheduler(optimizer, config)
     
     best_metric = 0
-    best_model_dict = None
+    best_model = None
     early_stopping_count = 0
     result = {
         'epoch':[],
@@ -42,17 +41,16 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
     print("-"*10, "Training", "-"*10)
 
     for e in range(1, config.epoches + 1):
-        #batch_loss, batch_f1 = train_per_epoch(train_loader, model, loss_func, optimizer, config)
-        batch_loss, batch_f1 = train_per_epoch_with_pseudo_labeling(e, train_loader, pesudo_dataloader, model, loss_func, optimizer, config)
+        batch_loss, batch_f1 = train_per_epoch(train_loader, model, loss_func, optimizer, config)
         running_loss, running_acc, running_f1, examples = vlidation_per_epoch(valid_loader, model, loss_func, config)
         
-        # dic로 출력
-        #result = logging_with_dict(result, e, batch_loss, batch_f1, running_loss, running_acc, running_f1)
+        # dict로 기록
+        result = logging_with_dict(result, e, batch_loss, batch_f1, running_loss, running_acc, running_f1)
         
-        # wandb log 출력
+        # wandb log 기록
         logging_with_wandb(e, batch_loss, batch_f1, running_loss, running_acc, running_f1, examples, fold_index)
         
-        # 콘솔 출력
+        # 콘솔 기록
         logging_with_sysprint(e, batch_loss, batch_f1, running_loss, running_acc, running_f1, fold_index)
         
         # lr 스케쥴러 실행
@@ -68,7 +66,7 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
             else:
                 torch.save(model, f'{config.model_save_path}models/{config.save_name}/fold_{fold_index}_{config.save_name}_best.pt')
             best_metric = running_f1
-            best_model_dict = model.state_dict()
+            best_model = model
             print("-"*10, "Saved!!", "-"*10)
         else:
             early_stopping_count += 1
@@ -83,7 +81,7 @@ def train(train_loader, valid_loader, class_weight, fold_index, config, pesudo_d
             print("-"*10, "Early Stop!!!!", "-"*10)
             break
         
-    return best_model_dict
+    return best_model
 
 # 1 epoch에 대한 훈련 코드
 def train_per_epoch(train_loader, model, loss_func, optimizer, config):
@@ -121,66 +119,6 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
     batch_f1 = f1_score(batch_f1_target, batch_f1_pred, average='macro')
     return batch_loss, batch_f1
 
-# 1 epoch에 대한 훈련 코드
-def train_per_epoch_with_pseudo_labeling(epoch, train_loader, pesudo_train_loader, model, loss_func, optimizer, config):
-    scaler = GradScaler()
-    model.train()
-    batch_loss = 0
-    batch_f1_pred = []
-    batch_f1_target = []
-    # train
-    torch.cuda.empty_cache() 
-    tr_idx = 0
-    for (X, y), pesudo_X in tqdm(zip(train_loader, pesudo_train_loader), total=len(train_loader)):
-        x = X.to(config.device)
-        
-        y = y.to(config.device)
-        optimizer.zero_grad()
-        with autocast():
-            if epoch == 1:
-                if config.model_name == SHOPEEDenseNet:
-                    pred = model(x, y)
-                    loss = loss_func(pred, y)
-                else:
-                    pred = model(x)
-                    loss = loss_func(pred, y)
-            
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                pesudo_x = pesudo_X.to(config.device)
-                if config.model_name == SHOPEEDenseNet:
-                    pred = model(x, y)
-                    basic_loss = loss_func(pred, y)
-        
-                    pseudo_pred = model(pesudo_x, y)
-                    pseudo_loss = loss_func(pseudo_pred, pred)
-                else:
-                    pred = model(x)
-                    basic_loss = loss_func(pred, y)
-                
-                    pseudo_pred = model(pesudo_x)
-                    pseudo_loss = loss_func(pseudo_pred, pred)
-
-                loss = basic_loss + pseudo_loss * 0.5
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-
-        batch_loss += loss.cpu().data
-        if config.mode == 'Regression':
-            batch_f1_pred.extend(pred[0].cpu().data)
-            batch_f1_target.extend(y.cpu().data)
-        else:
-            batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
-            batch_f1_target.extend(y.cpu().data)
-
-        tr_idx += 1
-    batch_loss /= (tr_idx+1)
-    batch_f1 = f1_score(batch_f1_target, batch_f1_pred, average='macro')
-    return batch_loss, batch_f1
-
 # 1 epoch에 대한 평가 코드
 def vlidation_per_epoch(valid_loader, model, loss_func, config):
      # validation
@@ -206,6 +144,7 @@ def vlidation_per_epoch(valid_loader, model, loss_func, config):
                     running_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
                     running_f1_target.extend(y.cpu().data)
                 running_loss += loss.cpu().data
+                # 오분류 이미지 기록
                 if config.mode != 'Regression':
                     if te_idx % 10 == 0:
                         pred_label = torch.argmax(pred.cpu().data, dim=1)
