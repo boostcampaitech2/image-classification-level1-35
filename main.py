@@ -13,7 +13,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     argv = sys.argv
     FILE_NAME = argv[0] # 실행시키는 파일명
     CONFIG_PATH = ""   # config file 경로
@@ -46,8 +45,7 @@ if __name__ == "__main__":
     config.mode = 'Classification' #'Regression'
     # trasform
     transform_train = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         HorizontalFlip(p=0.5),
         GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -56,8 +54,7 @@ if __name__ == "__main__":
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
-        CenterCrop(always_apply=True, height=384, width=384, p=1.0),
-        Resize(224, 224, always_apply=True, p=1.0),
+        Resize(321, 258, always_apply=True, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])

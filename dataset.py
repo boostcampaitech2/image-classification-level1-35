@@ -39,6 +39,21 @@ class TrainDataset(Dataset):
         else:
             return img.type(torch.float32), self.y[index]
 
+class TestDataset(Dataset):
+    def __init__(self, img_paths, transform):
+        self.img_paths = img_paths
+        self.transform = transform
+
+    def __getitem__(self, index):
+        image = Image.open(self.img_paths[index])
+
+        if self.transform:
+            image = self.transform(image=np.array(image))['image']
+        return image.float()
+
+    def __len__(self):
+        return len(self.img_paths)
+
 # Data augmentation을 위한 함수
 def augmentation(pathes, labels, targets, aug_num):
     # AutoAugmentPolicy = IMAGENET
@@ -59,7 +74,6 @@ def augmentation(pathes, labels, targets, aug_num):
             processed_img.save(new_path)
 
 def new_train_dataset(train_path, img_path, config):
-
     raw = pd.read_csv(train_path)
     new_dict = {
         'id':[],

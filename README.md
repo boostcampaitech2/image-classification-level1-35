@@ -95,12 +95,17 @@ num_classes = 3 ; # of discriminant classes according to model
 ```
 
 2. main execution
+* -c is mandatory
 ```
 main.py -c <config file path>
 E.g. main.py -c config.ini
 ```
 
 # Inference
+* -m : your models location
+* -d : info.csv location
+* -s : save location (Basically, current folder, name is results)
+* -t is option: None or Fold
 ```
-inference.py -m <model path> -d <eval data path>
+inference.py -m <model path> -d <file path> -s <save path> -t <inference_type>
 ```

@@ -143,6 +143,7 @@ if __name__ == "__main__":
 
     df_image = get_bound_box(df)
     make_cropped_image(df_image, PATH, train_data)
+    print('-'*10,"Finished!!!",'-'*10)
     
     
 
