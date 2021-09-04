@@ -90,7 +90,7 @@ def get_loss(config, class_weight):
         loss_func1 = CrossEntropy_FoscalLoss(class_weight, config)
     elif config.loss == 'CrossEntropy_weighted':
         loss_func1 = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weight).to(config.device, dtype=torch.float))
-    elif config.loss == 'Foscal':
+    elif config.loss == 'Focal':
         loss_func1 = FocalLoss()
     elif config.loss == 'MSE':
         loss_func1 = MSELoss()
