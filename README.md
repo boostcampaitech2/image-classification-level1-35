@@ -90,7 +90,9 @@ epoches = 100
 lr = 1e-4
 batch_size = 32
 prediction_type = Age ; Mask, Age, Gender, All
-learning_type = All ; Mask, None, All (E.g. A model that judges only the image with a mask in Age)
+;(E.g. prediction_type: Age -> A model that judges Age [<30, 30<=&<60, 60<=])
+learning_type = All ; Mask, None, All 
+;(E.g. prediction_type: Age, learning_type: Mask -> A model that judges only the image with a mask in Age)
 num_classes = 3 ; # of discriminant classes according to model
 ```
 
