@@ -123,6 +123,19 @@ def new_train_dataset(train_path, img_path, config):
     df = pd.DataFrame(new_dict)
     return df
 
+def new_train_dataset_2(train_path): # made by 현수
+
+    raw = pd.read_csv(train_path)
+    #새로운 데이터셋 생성하기
+    raw["gender"] = raw["gender"].map({np.nan:"male"})
+    raw["age"] = raw["age"].map({np.nan:"0"})
+    df = pd.DataFrame({'id': raw["id"], 
+                    'gender': raw["gender"], 
+                    'age': raw["age"], 
+                    'mask': raw["mask"], 
+                    'path': raw["path"]})
+    return df
+
 def get_label(df, model_type):
     if model_type == 'Mask':
         df.loc[(df['mask']=='wear'), 'class'] = 0
@@ -250,7 +263,7 @@ def get_label_added_data_for_age(age):
 
 def unlabeled_dataset():
     test_dir = '/opt/ml/input/data/eval'
-    image_dir = os.path.join(test_dir, 'cropped_images')
+    image_dir = os.path.join(test_dir, 'cropped_images_eval')
     submission = pd.read_csv(os.path.join(test_dir, 'info.csv'))
     image_paths = [os.path.join(image_dir, img_id) for img_id in submission.ImageID]
     return image_paths

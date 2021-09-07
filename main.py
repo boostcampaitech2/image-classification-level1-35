@@ -14,7 +14,6 @@ from albumentations.pytorch import ToTensorV2
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
-print("a")
 if __name__ == "__main__":
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     argv = sys.argv
@@ -76,6 +75,8 @@ if __name__ == "__main__":
     print("Data Loading...")
     # img_list, y_list = path_maker(config.train_csv_path, config.train_images_path, config.load_augmentation)
     df = new_train_dataset(config.train_csv_path, config.train_images_path, config)
+    df2 = new_train_dataset_2("/opt/ml/input/data_add/1/Train/train_add_1.csv")
+    df = pd.concat([df,df2],ignore_index=True)
     df = get_label(df, config.prediction_type)
 
     # if config.prediction_type == 'Age':
