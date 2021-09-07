@@ -138,7 +138,6 @@ if __name__ == "__main__":
     image_path = ''
     data_type = -1
     # default
-    save_path = '/opt/ml/input/data/train/cropped_images' if data_type else '/opt/ml/input/data/eval/cropped_images'
     
     try:
         # 파일명 이후 부터 입력 받는 옵션
@@ -159,6 +158,7 @@ if __name__ == "__main__":
                 print("-t <train or eval> Wrong Input!!")
                 sys.exit(2)
             data_type = True if arg == 'train' else False
+            save_path = '/opt/ml/input/data/train/cropped_images' if data_type else '/opt/ml/input/data/eval/cropped_images'
         elif opt in ("-i", "--image_path"):
             image_path = arg
         elif opt in ("-s", "--save_path"):
@@ -173,7 +173,6 @@ if __name__ == "__main__":
         print(file_name, "-i <image_folder_path> is madatory")
         sys.exit(2)
 
-    
     l = [p for p in glob.glob(f'{image_path}/**', recursive=True) if 'aug' not in p]
     df = pd.DataFrame()
     df['path'] = l

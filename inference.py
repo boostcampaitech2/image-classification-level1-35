@@ -12,41 +12,19 @@ from albumentations.pytorch import ToTensorV2
 
 from torch.utils.data import DataLoader
 
-def single_inference(MODEL_PATH, SAVE_PATH, loader):
+def inference(model_path, save_path, loader):
     device = torch.device('cuda')
-    if SAVE_PATH == "":
+    if save_path == "":
         save_name = './results.csv'
     else:
-        save_name = SAVE_PATH
-
-    model = torch.load(MODEL_PATH)
-    model.eval()
-
-    # 모델이 테스트 데이터셋을 예측하고 결과를 저장합니다.
-    all_prediction = []
-    for images in tqdm(loader):
-        with torch.no_grad():
-            images = images.to(device)
-            pred = model(images)
-            pred = pred.argmax(dim=-1)
-            all_prediction.extend(pred.cpu().numpy())
-
-    submission['ans'] = all_prediction
-    submission.to_csv(save_name, index=False)
-    print('test inference is done!')
-
-def folds_inference(MODEL_PATH, SAVE_PATH, loader):
-    device = torch.device('cuda')
-    if SAVE_PATH == "":
-        save_name = './results.csv'
-    else:
-        save_name = SAVE_PATH
+        save_name = save_path
 
     all_predictions = []
-    for idx, model_path in enumerate(os.listdir(MODEL_PATH)):
+    # model_path ~~~.pt / MODEL_PATH ~~~ -> ~~~.pt 1개
+    for idx, model_pt_path in enumerate(os.listdir(model_path)):
         print('-'*10, f"Fold {idx} Start", '-'*10)
-        print(f'Inference {model_path}')
-        model = torch.load(os.path.join(MODEL_PATH, model_path)).to(device)
+        print(f'Inference {model_pt_path}')
+        model = torch.load(os.path.join(model_path, model_pt_path)).to(device)
         model.eval()
         # 모델이 테스트 데이터셋을 예측하고 결과를 저장합니다.
         all_prediction = []
@@ -59,7 +37,8 @@ def folds_inference(MODEL_PATH, SAVE_PATH, loader):
 
     print(np.array(all_predictions).shape)
     all_predictions = np.array(all_predictions)
-    master_predictions = all_predictions[0] + all_predictions[1] + all_predictions[2] + all_predictions[3] + all_predictions[4]
+
+    master_predictions = np.sum(all_predictions, axis=0)
     ensemble_result = np.argmax(master_predictions, axis=1)
     print(ensemble_result.shape)
 
@@ -114,10 +93,8 @@ if __name__ == "__main__":
     print('-'*10, "Data loading complete", '-'*10)
 
     print('-'*10, "Inference Start", '-'*10)
-    if config.k_fold_num == -1:
-        df = single_inference(config.model_path, config.inference_result_save_path, loader)
-    else:
-        df = folds_inference(config.model_path, config.inference_result_save_path, loader)
+    
+    inference(config.model_path, config.inference_result_save_path, loader)
 
     print('-'*10,"Finished!!!",'-'*10)
 

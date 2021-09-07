@@ -36,7 +36,7 @@ def read_config(paths):
     config.save_name = values['path']['save_name']
 
     # For wandb
-    config.wandb_use = values['wandb']['wandb_use']
+    config.wandb_use = values['wandb'].getboolean('wandb_use', 'b')
     config.wandb_group_name = values['wandb']['wandb_group_name']
     config.wandb_name = values['wandb']['wandb_name']
     config.wandb_entity = values['wandb']['wandb_entity']

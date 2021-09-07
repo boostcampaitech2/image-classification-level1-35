@@ -73,8 +73,8 @@ def augmentation(pathes, labels, targets, aug_num):
             # 이미지 저장
             processed_img.save(new_path)
 
-def new_train_dataset(train_path, img_path, config):
-    raw = pd.read_csv(train_path)
+def new_train_dataset(train_csv_path, img_path, config):
+    raw = pd.read_csv(train_csv_path)
     new_dict = {
         'id':[],
         'age' : [],
@@ -82,32 +82,19 @@ def new_train_dataset(train_path, img_path, config):
         'mask' :[],
         'path' :[]
     }
+    mask_dict = {'m': 'wear', 'i': 'incorrect', 'n': 'not wear'}
     for raw_idx, v in enumerate(raw['path']):
         person_path = img_path + '/' + v
         number, gender, race, age = v.split('_')
         for imgp in os.listdir(person_path):
             if not config.load_augmentation and 'aug' in imgp:
                 continue
-            if imgp[0] == 'm':
-                new_dict['id'].append(raw['id'].iloc[raw_idx])
-                new_dict['mask'].append('wear')
-                new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
-                new_dict['path'].append(os.path.join(person_path, imgp))
-            elif imgp[0] == 'i':
-                new_dict['id'].append(raw['id'].iloc[raw_idx])
-                new_dict['mask'].append('incorrect')
-                new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
-                new_dict['path'].append(os.path.join(person_path, imgp))
-            elif imgp[0] == 'n':
-                new_dict['id'].append(raw['id'].iloc[raw_idx])
-                new_dict['mask'].append('not wear')
-                new_dict['gender'].append(gender)
-                new_dict['age'].append(float(age))
-                new_dict['path'].append(os.path.join(person_path, imgp))
-            else:
-                pass
+            
+            new_dict['id'].append(raw['id'].iloc[raw_idx])
+            new_dict['mask'].append(mask_dict[imgp[0]])
+            new_dict['gender'].append(gender)
+            new_dict['age'].append(float(age))
+            new_dict['path'].append(os.path.join(person_path, imgp))
 
     df = pd.DataFrame(new_dict)
     return df
@@ -189,16 +176,19 @@ def make_fold(fold_num, df):
     person = len(pd.unique(df['id']))
     person_num_in_fold = person / fold_num
 
-    for i in range(fold_num):
-        fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)
-        if i == fold_num-1:
-            folds.append(df2['id'])
-        else:
-            _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
-            df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
-            folds.append(test['id'])
-    del df2
-
+    if fold_num == 1:
+        _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=0.2, random_state = 42)
+        folds.append(test['id'])
+    else:
+        for i in range(fold_num):
+            fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)
+            if i == fold_num-1:
+                folds.append(df2['id'])
+            else:
+                _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
+                df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
+                folds.append(test['id'])
+        del df2
     return folds
 
 # 외부 데이터(나이 모델 용) 로드
