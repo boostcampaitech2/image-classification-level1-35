@@ -1,5 +1,4 @@
-# 출처: 토론 게시판
-import torch.nn as nn 
+# 출처: 토론 게시판 
 import pandas as pd 
 import numpy as np 
 import os
@@ -8,6 +7,8 @@ from facenet_pytorch import MTCNN
 from tqdm.auto import tqdm
 from retinaface import RetinaFace
 from dataset import *
+import sys, getopt
+import glob
 
 def get_bound_box(df):
     # make empty dataframe
@@ -132,18 +133,56 @@ def make_cropped_image(df_image, save_path, train_data):
             cv2.imwrite(os.path.join(save_path, image_name), cropped_img)
 
 if __name__ == "__main__":
-    train_path = '/opt/ml/input/data/eval/info.csv'
-    img_path = '/opt/ml/input/data/eval/images' 
-    train_data = True
-    PATH = '/opt/ml/input/data/train/cropped_images' if train_data else '/opt/ml/input/data/eval/cropped_images'
+    argv = sys.argv
+    file_name = argv[0] # 실행시키는 파일명
+    image_path = ''
+    data_type = -1
 
-    df = pd.read_csv(train_path)
-    l = [os.path.join(img_path, df['ImageID'].iloc[i]) for i in range(df.shape[0])]
+    try:
+        # 파일명 이후 부터 입력 받는 옵션
+        # help, config_path
+        opts, etc_args = getopt.getopt(argv[1:], "ht:i:s:", ["help", "train_eval=", "image_path=", "save_path="])
+    except getopt.GetoptError:
+        # 잘못된 옵션을 입력하는 경우
+        print(file_name, "-t <train or eval> -i <image_folder_path> -s <save_path>")
+        sys.exit(2)
+        
+    # 입력된 옵션을 적절히 변수로 입력
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print(file_name, "-t <train or eval> -i <image_folder_path> -s <save_path>")
+            sys.exit(0)
+        elif opt in ("-t", "--train_eval"):
+            if arg not in ['train', 'eval']:
+                print("-t <train or eval> Wrong Input!!")
+                sys.exit(2)
+            data_type = True if arg == 'train' else False
+        elif opt in ("-i", "--image_path"):
+            image_path = arg
+        elif opt in ("-s", "--save_path"):
+            save_path = arg
+    
+    # 입력이 필수적인 옵션
+    if data_type == -1:
+        print(file_name, "-t <train or eval> is madatory")
+        sys.exit(2)
+
+    if image_path == -1:
+        print(file_name, "-i <image_folder_path> is madatory")
+        sys.exit(2)
+
+    # default
+    save_path = '/opt/ml/input/data/train/cropped_images' if data_type else '/opt/ml/input/data/eval/cropped_images'
+
+    l = [p for p in glob.glob(f'{image_path}/**', recursive=True) if 'aug' not in p]
+    df = pd.DataFrame()
     df['path'] = l
 
+    print(df.head())
     df_image = get_bound_box(df)
-    make_cropped_image(df_image, PATH, train_data)
+    make_cropped_image(df_image, save_path, data_type)
     print('-'*10,"Finished!!!",'-'*10)
-    
+
+
     
 
