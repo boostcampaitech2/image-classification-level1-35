@@ -188,9 +188,6 @@ def make_fold(fold_num, df):
     df2 = df[(~df['path'].str.contains('aug'))]
     person = len(pd.unique(df['id']))
     person_num_in_fold = person / fold_num
-    #fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)
-
-    #fold_ratio = [0.2, 0.25, 0.3, 0.6, 0.99] #
 
     for i in range(fold_num):
         fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)

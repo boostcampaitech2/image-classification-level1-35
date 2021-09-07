@@ -112,7 +112,7 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
             batch_f1_pred.extend(pred[0].detach().cpu().numpy())
             batch_f1_target.extend(y.detach().cpu().numpy())
         else:
-            batch_f1_pred.extend(torch.argmax(pred.detach().cpu().numpy(), dim=1))
+            batch_f1_pred.extend(torch.argmax(pred.cpu(), dim=1))
             batch_f1_target.extend(y.detach().cpu().numpy())
 
     batch_loss /= (tr_idx+1)
