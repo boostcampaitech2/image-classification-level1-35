@@ -45,7 +45,7 @@ if __name__ == "__main__":
     config.mode = 'Classification' #'Regression'
     # trasform
     transform_train = Compose([
-        Resize(321, 258, always_apply=True, p=1.0),
+        Resize(height=config.image_height, width=config.image_width, always_apply=True, p=1.0),
         HorizontalFlip(p=0.5),
         GaussianBlur(blur_limit = (3,7), sigma_limit=0, p=0.5),
         RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.3, 0.3), p=0.5),
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ToTensorV2(p=1.0),
     ])
     transform_valid = Compose([
-        Resize(321, 258, always_apply=True, p=1.0),
+        Resize(height=config.image_height, width=config.image_width, always_apply=True, p=1.0),
         Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0),
     ])

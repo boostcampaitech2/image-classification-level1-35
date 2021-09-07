@@ -107,13 +107,13 @@ def train_per_epoch(train_loader, model, loss_func, optimizer, config):
         scaler.step(optimizer)
         scaler.update()
 
-        batch_loss += loss.cpu().data
+        batch_loss += loss.item()
         if config.mode == 'Regression':
-            batch_f1_pred.extend(pred[0].cpu().data)
-            batch_f1_target.extend(y.cpu().data)
+            batch_f1_pred.extend(pred[0].detach().cpu().numpy())
+            batch_f1_target.extend(y.detach().cpu().numpy())
         else:
-            batch_f1_pred.extend(torch.argmax(pred.cpu().data, dim=1))
-            batch_f1_target.extend(y.cpu().data)
+            batch_f1_pred.extend(torch.argmax(pred.detach().cpu().numpy(), dim=1))
+            batch_f1_target.extend(y.detach().cpu().numpy())
 
     batch_loss /= (tr_idx+1)
     batch_f1 = f1_score(batch_f1_target, batch_f1_pred, average='macro')
