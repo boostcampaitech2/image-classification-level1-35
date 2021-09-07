@@ -186,11 +186,20 @@ def make_fold(fold_num, df):
     # ver2
     # aug로 인한 균형 맞춰진것 영향 없애기
     df2 = df[(~df['path'].str.contains('aug'))]
-    fold_ratio = [0.2, 0.25, 0.3, 0.6, 0.99]
+    person = len(pd.unique(df['id']))
+    person_num_in_fold = person / fold_num
+    #fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)
+
+    #fold_ratio = [0.2, 0.25, 0.3, 0.6, 0.99] #
+
     for i in range(fold_num):
-        _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio[i], random_state = 42)
-        df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
-        folds.append(test['id'])
+        fold_ratio = np.around(person_num_in_fold / len(set(df2['id'])), 1)
+        if i == fold_num-1:
+            folds.append(df2['id'])
+        else:
+            _, test = train_test_apart_stratify(df2, group="id", stratify="class", force=True, test_size=fold_ratio, random_state = 42)
+            df2 = df2[~df2['id'].isin(pd.unique(test['id']))]
+            folds.append(test['id'])
     del df2
 
     return folds

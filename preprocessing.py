@@ -137,7 +137,9 @@ if __name__ == "__main__":
     file_name = argv[0] # 실행시키는 파일명
     image_path = ''
     data_type = -1
-
+    # default
+    save_path = '/opt/ml/input/data/train/cropped_images' if data_type else '/opt/ml/input/data/eval/cropped_images'
+    
     try:
         # 파일명 이후 부터 입력 받는 옵션
         # help, config_path
@@ -171,9 +173,7 @@ if __name__ == "__main__":
         print(file_name, "-i <image_folder_path> is madatory")
         sys.exit(2)
 
-    # default
-    save_path = '/opt/ml/input/data/train/cropped_images' if data_type else '/opt/ml/input/data/eval/cropped_images'
-
+    
     l = [p for p in glob.glob(f'{image_path}/**', recursive=True) if 'aug' not in p]
     df = pd.DataFrame()
     df['path'] = l
