@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     if config.k_fold_num != -1:
         folds = make_fold(config.k_fold_num, df)
-
+    print(".")
     #print(np.array(folds).shape)
 
     # augmentation == True 이면 
