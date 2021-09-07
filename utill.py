@@ -36,7 +36,7 @@ def read_config(paths):
     config.save_name = values['path']['save_name']
 
     # For wandb
-    config.u
+    config.wandb_use = values['wandb']['wandb_use']
     config.wandb_group_name = values['wandb']['wandb_group_name']
     config.wandb_name = values['wandb']['wandb_name']
     config.wandb_entity = values['wandb']['wandb_entity']
@@ -73,9 +73,9 @@ def read_config(paths):
 # dict에 학습 결과 기록
 def logging_with_dict(result, e, batch_loss, batch_f1, running_loss, running_acc, running_f1):
     result['epoch'].append(e)
-    result['train_loss'].append(batch_loss.cpu().data)
+    result['train_loss'].append(batch_loss)
     result['train_f1'].append(batch_f1)
-    result['valid_loss'].append(running_loss.cpu().data)
+    result['valid_loss'].append(running_loss)
     result['valid_acc'].append(running_acc)
     result['valid_f1'].append(running_f1)
 
