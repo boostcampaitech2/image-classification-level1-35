@@ -19,6 +19,9 @@ def read_config(paths):
 
     values = configparser.ConfigParser()
     values.read(paths, encoding='utf-8')
+    # For data
+    config.image_width = int(values['data']['image_width'])
+    config.image_height = int(values['data']['image_height'])
 
     # For Aug
     config.augmentation = values['augmentation'].getboolean('augmentation', "b")
@@ -33,12 +36,13 @@ def read_config(paths):
     config.save_name = values['path']['save_name']
 
     # For wandb
+    config.wandb_use = values['wandb'].getboolean('wandb_use', 'b')
     config.wandb_group_name = values['wandb']['wandb_group_name']
     config.wandb_name = values['wandb']['wandb_name']
     config.wandb_entity = values['wandb']['wandb_entity']
     config.wandb_project_name = values['wandb']['wandb_project_name']
 
-    # For 학습
+    # For training
     config.optimizer = values['training']['optimizer']
     config.scheduler = values['training']['scheduler']
     config.loss = values['training']['loss']
@@ -55,15 +59,23 @@ def read_config(paths):
     config.learning_type = values['training']['learning_type']
     config.num_classes = int(values['training']['num_classes'])
     config.Age_external_data_load = values['training'].getboolean('Age_external_data_load', 'b')
-    
+
+    # For inference
+    config.model_path = values['inference']['model_path']
+    config.eval_csv_path = values['inference']['eval_csv_path']
+    config.eval_image_path = values['inference']['eval_image_path']
+    config.inference_result_save_path = values['inference']['inference_result_save_path']
+
+
+
     return config
 
 # dict에 학습 결과 기록
 def logging_with_dict(result, e, batch_loss, batch_f1, running_loss, running_acc, running_f1):
     result['epoch'].append(e)
-    result['train_loss'].append(batch_loss.cpu().data)
+    result['train_loss'].append(batch_loss)
     result['train_f1'].append(batch_f1)
-    result['valid_loss'].append(running_loss.cpu().data)
+    result['valid_loss'].append(running_loss)
     result['valid_acc'].append(running_acc)
     result['valid_f1'].append(running_f1)
 
